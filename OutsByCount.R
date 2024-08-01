@@ -11,7 +11,7 @@ abid <- pitches |>
     at_bat_id = cur_group_id()
   )
 
-# Join these id's to each invidual pitch
+# Join these id's to each individual pitch
 
 p1 <- left_join(pitches, abid, by = c("game_pk", "at_bat_number"))
 
@@ -34,10 +34,18 @@ outs <- c("double_play", "field_out", "fielders_choice", "fielders_choice_out", 
 # Not sure if errors should count (I think yes) and not sure about sacrifices (sac double plays for sure but idk about normal sac bunt/fly)
 
 p2 |>
+  distinct(at_bat_id, balls, strikes, .keep_all=T) |>
   group_by(balls, strikes) |>
   reframe(
     count = n(),
     outs = sum(ending_event %in% outs), 
     percent_out = outs/count
-  )
+  ) |>
+  filter(balls <4,
+         strikes<3
+  ) |>
+  ggplot(
+    aes(x=strikes, y=percent_out, color=as.factor(balls))) +
+  geom_path() +
+  geom_point()
 # After double checking, the 8 cases where the pre-pitch count had 3 strikes or 4 balls are not data errors, but umpire errors (I think)

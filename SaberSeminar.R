@@ -23,12 +23,17 @@ qualified_pitchers <- pitches |>
   filter(n > 500)
 
 dat <- pitches |>
-  filter(player_name %in% qualified_pitchers$player_name) |> # This is still using data from the first 2 years, not just 2023
+  filter(player_name %in% qualified_pitchers$player_name,
+         game_year == 2023) |>
   select(1, 15, 3, 24, 25, 50, 83) |>
   na.omit() |>
   mutate(axis_x = cos((pi/180) * spin_axis),
-         axis_y = sin((pi/180) * spin_axis)) 
+         axis_y = sin((pi/180) * spin_axis))
 
+table(dat$pitch_type)
+
+
+table(dat$pitch_type, dat$p_throws)
 
 
 # Right-handed 4-seam
@@ -38,7 +43,7 @@ ff_R <- dat |>
          p_throws == "R") |>
   select(release_speed, pfx_x, pfx_z, release_spin_rate, axis_x, axis_y)
 
-clust <- 1:8
+clust <- 1:15
 sse_ff_R <- numeric(length(clust))
 
 for (i in clust) {
@@ -46,7 +51,7 @@ for (i in clust) {
   sse_ff_R[i] <- k_means$tot.withinss
 }
 
-plot(1:8, sse_ff_R, type="b",
+plot(1:15, sse_ff_R, type="b",
      xlab = "Number of Clusters",
      yla = "Within groups sum of squares")
 
@@ -60,6 +65,7 @@ ff_R_means <- ff_R_clust |>
 
 RFF <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
+         game_year == 2023,
          pitch_type == "FF",
          p_throws == "R",
          !is.na(release_speed),
@@ -67,7 +73,8 @@ RFF <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(pitch_subtype = kmeans(ff_R, centers=3)$cluster)
+  mutate(cluster = kmeans(ff_R, centers=3)$cluster,
+         pitch_subtype = paste0(pitch_type,cluster))
 
 
 # Left-handed 4-seam
@@ -98,6 +105,7 @@ ff_L_means <- ff_L_clust |>
 
 LFF <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
+         game_year == 2023,
          pitch_type == "FF",
          p_throws == "L",
          !is.na(release_speed),
@@ -105,7 +113,8 @@ LFF <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(pitch_subtype = kmeans(ff_L, centers=3)$cluster)
+  mutate(cluster = kmeans(ff_L, centers=3)$cluster,
+         pitch_subtype = paste0(pitch_type,cluster))
 
 
 
@@ -137,6 +146,7 @@ sl_R_means <- sl_R_clust |>
 
 RSL <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
+         game_year == 2023,
          pitch_type == "SL",
          p_throws == "R",
          !is.na(release_speed),
@@ -144,7 +154,8 @@ RSL <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(pitch_subtype = kmeans(sl_R, centers=3)$cluster)
+  mutate(cluster = kmeans(sl_R, centers=3)$cluster,
+         pitch_subtype = paste0(pitch_type,cluster))
 
 
 
@@ -176,6 +187,7 @@ sl_L_means <- sl_L_clust |>
 
 LSL <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
+         game_year == 2023,
          pitch_type == "SL",
          p_throws == "L",
          !is.na(release_speed),
@@ -183,7 +195,8 @@ LSL <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(pitch_subtype = kmeans(sl_L, centers=3)$cluster)
+  mutate(cluster = kmeans(sl_L, centers=3)$cluster,
+         pitch_subtype = paste0(pitch_type,cluster))
 
 
 
@@ -215,6 +228,7 @@ si_R_means <- si_R_clust |>
 
 RSI <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
+         game_year == 2023,
          pitch_type == "SI",
          p_throws == "R",
          !is.na(release_speed),
@@ -222,7 +236,8 @@ RSI <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(pitch_subtype = kmeans(si_R, centers=3)$cluster)
+  mutate(cluster = kmeans(si_R, centers=3)$cluster,
+         pitch_subtype = paste0(pitch_type,cluster))
 
 
 
@@ -254,6 +269,7 @@ si_L_means <- si_L_clust |>
 
 LSI <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
+         game_year == 2023,
          pitch_type == "SI",
          p_throws == "L",
          !is.na(release_speed),
@@ -261,7 +277,8 @@ LSI <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(pitch_subtype = kmeans(si_L, centers=3)$cluster)
+  mutate(cluster = kmeans(si_L, centers=3)$cluster,
+         pitch_subtype = paste0(pitch_type,cluster))
 
 
 
@@ -293,6 +310,7 @@ ch_R_means <- ch_R_clust |>
 
 RCH <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
+         game_year == 2023,
          pitch_type == "CH",
          p_throws == "R",
          !is.na(release_speed),
@@ -300,7 +318,8 @@ RCH <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(pitch_subtype = kmeans(ch_R, centers=3)$cluster)
+  mutate(cluster = kmeans(ch_R, centers=3)$cluster,
+         pitch_subtype = paste0(pitch_type,cluster))
 
 
 
@@ -332,6 +351,7 @@ ch_L_means <- ch_L_clust |>
 
 LCH <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
+         game_year == 2023,
          pitch_type == "CH",
          p_throws == "L",
          !is.na(release_speed),
@@ -339,7 +359,8 @@ LCH <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(pitch_subtype = kmeans(ch_L, centers=3)$cluster)
+  mutate(cluster = kmeans(ch_L, centers=3)$cluster,
+         pitch_subtype = paste0(pitch_type,cluster))
 
 
 
@@ -371,6 +392,7 @@ cu_R_means <- cu_R_clust |>
 
 RCU <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
+         game_year == 2023,
          pitch_type == "CU",
          p_throws == "R",
          !is.na(release_speed),
@@ -378,7 +400,8 @@ RCU <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(pitch_subtype = kmeans(cu_R, centers=3)$cluster)
+  mutate(cluster = kmeans(cu_R, centers=3)$cluster,
+         pitch_subtype = paste0(pitch_type,cluster))
 
 
 
@@ -410,6 +433,7 @@ cu_L_means <- cu_L_clust |>
 
 LCU <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
+         game_year == 2023,
          pitch_type == "CU",
          p_throws == "L",
          !is.na(release_speed),
@@ -417,7 +441,8 @@ LCU <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(pitch_subtype = kmeans(cu_L, centers=3)$cluster)
+  mutate(cluster = kmeans(cu_L, centers=3)$cluster,
+         pitch_subtype = paste0(pitch_type,cluster))
 
 
 
@@ -449,6 +474,7 @@ fc_R_means <- fc_R_clust |>
 
 RFC <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
+         game_year == 2023,
          pitch_type == "FC",
          p_throws == "R",
          !is.na(release_speed),
@@ -456,7 +482,8 @@ RFC <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(pitch_subtype = kmeans(fc_R, centers=3)$cluster)
+  mutate(cluster = kmeans(fc_R, centers=3)$cluster,
+         pitch_subtype = paste0(pitch_type,cluster))
 
 
 
@@ -488,6 +515,7 @@ fc_L_means <- fc_L_clust |>
 
 LFC <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
+         game_year == 2023,
          pitch_type == "FC",
          p_throws == "L",
          !is.na(release_speed),
@@ -495,4 +523,375 @@ LFC <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(pitch_subtype = kmeans(fc_L, centers=3)$cluster)
+  mutate(cluster = kmeans(fc_L, centers=3)$cluster,
+         pitch_subtype = paste0(pitch_type,cluster))
+
+
+
+# Right-handed Sweeper
+
+st_R <- dat |>
+  filter(pitch_type == "ST",
+         p_throws == "R") |>
+  select(release_speed, pfx_x, pfx_z, release_spin_rate, axis_x, axis_y)
+
+sse_st_R <- numeric(length(clust))
+
+for (i in clust) {
+  k_means <- kmeans(st_R, centers=i)
+  sse_st_R[i] <- k_means$tot.withinss
+}
+
+plot(1:8, sse_st_R, type="b",
+     xlab = "Number of Clusters",
+     yla = "Within groups sum of squares")
+
+st_R_clust <- as.data.frame(kmeans(st_R, centers = 3)$centers)
+
+st_R_means <- st_R_clust |>
+  mutate(horz = pfx_x * 12,
+         vert = pfx_z * 12,
+         spin_axis_x = (acos(axis_x)) * (180/pi),
+         spin_axis_y = (asin(axis_y)) * (180/pi))
+
+RST <- pitches |>
+  filter(player_name %in% qualified_pitchers$player_name,
+         game_year == 2023,
+         pitch_type == "ST",
+         p_throws == "R",
+         !is.na(release_speed),
+         !is.na(pfx_x),
+         !is.na(pfx_z),
+         !is.na(release_spin_rate),
+         !is.na(spin_axis)) |>
+  mutate(cluster = kmeans(st_R, centers=3)$cluster,
+         pitch_subtype = paste0(pitch_type,cluster))
+
+
+
+# Left-handed Sweeper
+
+st_L <- dat |>
+  filter(pitch_type == "ST",
+         p_throws == "L") |>
+  select(release_speed, pfx_x, pfx_z, release_spin_rate, axis_x, axis_y)
+
+sse_st_L <- numeric(length(clust))
+
+for (i in clust) {
+  k_means <- kmeans(st_L, centers=i)
+  sse_st_L[i] <- k_means$tot.withinss
+}
+
+plot(1:8, sse_st_L, type="b",
+     xlab = "Number of Clusters",
+     yla = "Within groups sum of squares")
+
+st_L_clust <- as.data.frame(kmeans(st_L, centers = 3)$centers)
+
+st_L_means <- st_L_clust |>
+  mutate(horz = pfx_x * 12,
+         vert = pfx_z * 12,
+         spin_axis_x = (acos(axis_x)) * (180/pi),
+         spin_axis_y = (asin(axis_y)) * (180/pi))
+
+LST <- pitches |>
+  filter(player_name %in% qualified_pitchers$player_name,
+         game_year == 2023,
+         pitch_type == "ST",
+         p_throws == "L",
+         !is.na(release_speed),
+         !is.na(pfx_x),
+         !is.na(pfx_z),
+         !is.na(release_spin_rate),
+         !is.na(spin_axis)) |>
+  mutate(cluster = kmeans(st_L, centers=3)$cluster,
+         pitch_subtype = paste0(pitch_type,cluster))
+
+
+
+# Right-handed Splitter
+
+fs_R <- dat |>
+  filter(pitch_type == "FS",
+         p_throws == "R") |>
+  select(release_speed, pfx_x, pfx_z, release_spin_rate, axis_x, axis_y)
+
+sse_fs_R <- numeric(length(clust))
+
+for (i in clust) {
+  k_means <- kmeans(fs_R, centers=i)
+  sse_fs_R[i] <- k_means$tot.withinss
+}
+
+plot(1:8, sse_fs_R, type="b",
+     xlab = "Number of Clusters",
+     yla = "Within groups sum of squares")
+
+fs_R_clust <- as.data.frame(kmeans(fs_R, centers = 3)$centers)
+
+fs_R_means <- fs_R_clust |>
+  mutate(horz = pfx_x * 12,
+         vert = pfx_z * 12,
+         spin_axis_x = (acos(axis_x)) * (180/pi),
+         spin_axis_y = (asin(axis_y)) * (180/pi))
+
+RFS <- pitches |>
+  filter(player_name %in% qualified_pitchers$player_name,
+         game_year == 2023,
+         pitch_type == "FS",
+         p_throws == "R",
+         !is.na(release_speed),
+         !is.na(pfx_x),
+         !is.na(pfx_z),
+         !is.na(release_spin_rate),
+         !is.na(spin_axis)) |>
+  mutate(cluster = kmeans(fs_R, centers=3)$cluster,
+         pitch_subtype = paste0(pitch_type,cluster))
+
+
+
+# Left-handed Splitter
+
+fs_L <- dat |>
+  filter(pitch_type == "FS",
+         p_throws == "L") |>
+  select(release_speed, pfx_x, pfx_z, release_spin_rate, axis_x, axis_y)
+
+sse_fs_L <- numeric(length(clust))
+
+for (i in clust) {
+  k_means <- kmeans(fs_L, centers=i)
+  sse_fs_L[i] <- k_means$tot.withinss
+}
+
+plot(1:8, sse_fs_L, type="b",
+     xlab = "Number of Clusters",
+     yla = "Within groups sum of squares")
+
+fs_L_clust <- as.data.frame(kmeans(fs_L, centers = 3)$centers)
+
+fs_L_means <- fs_L_clust |>
+  mutate(horz = pfx_x * 12,
+         vert = pfx_z * 12,
+         spin_axis_x = (acos(axis_x)) * (180/pi),
+         spin_axis_y = (asin(axis_y)) * (180/pi))
+
+LFS <- pitches |>
+  filter(player_name %in% qualified_pitchers$player_name,
+         game_year == 2023,
+         pitch_type == "FS",
+         p_throws == "L",
+         !is.na(release_speed),
+         !is.na(pfx_x),
+         !is.na(pfx_z),
+         !is.na(release_spin_rate),
+         !is.na(spin_axis)) |>
+  mutate(cluster = kmeans(fs_L, centers=3)$cluster,
+         pitch_subtype = paste0(pitch_type,cluster))
+
+
+
+# Right-handed Knuckle-curve
+
+kc_R <- dat |>
+  filter(pitch_type == "KC",
+         p_throws == "R") |>
+  select(release_speed, pfx_x, pfx_z, release_spin_rate, axis_x, axis_y)
+
+sse_kc_R <- numeric(length(clust))
+
+for (i in clust) {
+  k_means <- kmeans(kc_R, centers=i)
+  sse_kc_R[i] <- k_means$tot.withinss
+}
+
+plot(1:8, sse_kc_R, type="b",
+     xlab = "Number of Clusters",
+     yla = "Within groups sum of squares")
+
+kc_R_clust <- as.data.frame(kmeans(kc_R, centers = 3)$centers)
+
+kc_R_means <- kc_R_clust |>
+  mutate(horz = pfx_x * 12,
+         vert = pfx_z * 12,
+         spin_axis_x = (acos(axis_x)) * (180/pi),
+         spin_axis_y = (asin(axis_y)) * (180/pi))
+
+RKC <- pitches |>
+  filter(player_name %in% qualified_pitchers$player_name,
+         game_year == 2023,
+         pitch_type == "KC",
+         p_throws == "R",
+         !is.na(release_speed),
+         !is.na(pfx_x),
+         !is.na(pfx_z),
+         !is.na(release_spin_rate),
+         !is.na(spin_axis)) |>
+  mutate(cluster = kmeans(kc_R, centers=3)$cluster,
+         pitch_subtype = paste0(pitch_type,cluster))
+
+
+
+# Left-handed Knuckle-curve
+
+kc_L <- dat |>
+  filter(pitch_type == "KC",
+         p_throws == "L") |>
+  select(release_speed, pfx_x, pfx_z, release_spin_rate, axis_x, axis_y)
+
+sse_kc_L <- numeric(length(clust))
+
+for (i in clust) {
+  k_means <- kmeans(kc_L, centers=i)
+  sse_kc_L[i] <- k_means$tot.withinss
+}
+
+plot(1:8, sse_kc_L, type="b",
+     xlab = "Number of Clusters",
+     yla = "Within groups sum of squares")
+
+kc_L_clust <- as.data.frame(kmeans(kc_L, centers = 3)$centers)
+
+kc_L_means <- kc_L_clust |>
+  mutate(horz = pfx_x * 12,
+         vert = pfx_z * 12,
+         spin_axis_x = (acos(axis_x)) * (180/pi),
+         spin_axis_y = (asin(axis_y)) * (180/pi))
+
+LKC <- pitches |>
+  filter(player_name %in% qualified_pitchers$player_name,
+         game_year == 2023,
+         pitch_type == "KC",
+         p_throws == "L",
+         !is.na(release_speed),
+         !is.na(pfx_x),
+         !is.na(pfx_z),
+         !is.na(release_spin_rate),
+         !is.na(spin_axis)) |>
+  mutate(cluster = kmeans(kc_L, centers=3)$cluster,
+         pitch_subtype = paste0(pitch_type,cluster))
+
+
+
+# Right-handed Slurve
+
+sv_R <- dat |>
+  filter(pitch_type == "SV",
+         p_throws == "R") |>
+  select(release_speed, pfx_x, pfx_z, release_spin_rate, axis_x, axis_y)
+
+sse_sv_R <- numeric(length(clust))
+
+for (i in clust) {
+  k_means <- kmeans(sv_R, centers=i)
+  sse_sv_R[i] <- k_means$tot.withinss
+}
+
+plot(1:8, sse_sv_R, type="b",
+     xlab = "Number of Clusters",
+     yla = "Within groups sum of squares")
+
+sv_R_clust <- as.data.frame(kmeans(sv_R, centers = 3)$centers)
+
+sv_R_means <- sv_R_clust |>
+  mutate(horz = pfx_x * 12,
+         vert = pfx_z * 12,
+         spin_axis_x = (acos(axis_x)) * (180/pi),
+         spin_axis_y = (asin(axis_y)) * (180/pi))
+
+RSV <- pitches |>
+  filter(player_name %in% qualified_pitchers$player_name,
+         game_year == 2023,
+         pitch_type == "SV",
+         p_throws == "R",
+         !is.na(release_speed),
+         !is.na(pfx_x),
+         !is.na(pfx_z),
+         !is.na(release_spin_rate),
+         !is.na(spin_axis)) |>
+  mutate(cluster = kmeans(sv_R, centers=3)$cluster,
+         pitch_subtype = paste0(pitch_type,cluster))
+
+
+
+# Left-handed Slurve
+
+sv_L <- dat |>
+  filter(pitch_type == "SV",
+         p_throws == "L") |>
+  select(release_speed, pfx_x, pfx_z, release_spin_rate, axis_x, axis_y)
+
+sse_sv_L <- numeric(length(clust))
+
+for (i in clust) {
+  k_means <- kmeans(sv_L, centers=i)
+  sse_sv_L[i] <- k_means$tot.withinss
+}
+
+plot(1:8, sse_sv_L, type="b",
+     xlab = "Number of Clusters",
+     yla = "Within groups sum of squares")
+
+sv_L_clust <- as.data.frame(kmeans(sv_L, centers = 3)$centers)
+
+sv_L_means <- sv_L_clust |>
+  mutate(horz = pfx_x * 12,
+         vert = pfx_z * 12,
+         spin_axis_x = (acos(axis_x)) * (180/pi),
+         spin_axis_y = (asin(axis_y)) * (180/pi))
+
+LSV <- pitches |>
+  filter(player_name %in% qualified_pitchers$player_name,
+         game_year == 2023,
+         pitch_type == "SV",
+         p_throws == "L",
+         !is.na(release_speed),
+         !is.na(pfx_x),
+         !is.na(pfx_z),
+         !is.na(release_spin_rate),
+         !is.na(spin_axis)) |>
+  mutate(cluster = kmeans(sv_L, centers=3)$cluster,
+         pitch_subtype = paste0(pitch_type,cluster))
+
+# Right-handed Forkball
+
+fo_R <- dat |>
+  filter(pitch_type == "FO",
+         p_throws == "R") |>
+  select(release_speed, pfx_x, pfx_z, release_spin_rate, axis_x, axis_y)
+
+sse_fo_R <- numeric(length(clust))
+
+for (i in clust) {
+  k_means <- kmeans(fo_R, centers=i)
+  sse_fo_R[i] <- k_means$tot.withinss
+}
+
+plot(1:8, sse_fo_R, type="b",
+     xlab = "Number of Clusters",
+     yla = "Within groups sum of squares")
+
+fo_R_clust <- as.data.frame(kmeans(fo_R, centers = 3)$centers)
+
+fo_R_means <- fo_R_clust |>
+  mutate(horz = pfx_x * 12,
+         vert = pfx_z * 12,
+         spin_axis_x = (acos(axis_x)) * (180/pi),
+         spin_axis_y = (asin(axis_y)) * (180/pi))
+
+RFO <- pitches |>
+  filter(player_name %in% qualified_pitchers$player_name,
+         game_year == 2023,
+         pitch_type == "FO",
+         p_throws == "R",
+         !is.na(release_speed),
+         !is.na(pfx_x),
+         !is.na(pfx_z),
+         !is.na(release_spin_rate),
+         !is.na(spin_axis)) |>
+  mutate(cluster = kmeans(fo_R, centers=3)$cluster,
+         pitch_subtype = paste0(pitch_type,cluster))
+#Seeing as all Forkballs are Kodai Senga, there is no reason to include them as it lacks the generality desired for this research
+
+
