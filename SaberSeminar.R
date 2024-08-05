@@ -1,6 +1,7 @@
 library(baseballr)
 library(tidyverse)
 library(readr)
+library(cluster)
 
 pitches <- read_csv("savant_pitch_level.csv")
 
@@ -10,6 +11,8 @@ pitches <- read_csv("savant_pitch_level.csv")
 #  group_by()
 
 table(pitches$pitch_type)
+
+dd <- pitches |> filter(player_name == "Duffy, Danny")
 
 #density(pitches$spin_axis)
 
@@ -27,8 +30,8 @@ dat <- pitches |>
          game_year == 2023) |>
   select(1, 15, 3, 24, 25, 50, 83) |>
   na.omit() |>
-  mutate(axis_x = cos((pi/180) * spin_axis),
-         axis_y = sin((pi/180) * spin_axis))
+  mutate(horz = pfx_x * 12,
+         vert = pfx_z * 12)
 
 table(dat$pitch_type)
 
@@ -41,27 +44,25 @@ table(dat$pitch_type, dat$p_throws)
 ff_R <- dat |>
   filter(pitch_type == "FF",
          p_throws == "R") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate, axis_x, axis_y)
+  select(release_speed, horz, vert, release_spin_rate) |>
+  scale()
 
-clust <- 1:15
+clust <- 1:20
 sse_ff_R <- numeric(length(clust))
 
 for (i in clust) {
-  k_means <- kmeans(ff_R, centers=i)
+  set.seed(740)
+  k_means <- kmeans(ff_R, centers=i, iter.max=200, algorithm="MacQueen")
   sse_ff_R[i] <- k_means$tot.withinss
 }
 
-plot(1:15, sse_ff_R, type="b",
+plot(1:20, sse_ff_R, type="b",
      xlab = "Number of Clusters",
      yla = "Within groups sum of squares")
 
-ff_R_clust <- as.data.frame(kmeans(ff_R, centers = 3)$centers)
+# 6
 
-ff_R_means <- ff_R_clust |>
-  mutate(horz = pfx_x * 12,
-         vert = pfx_z * 12,
-         spin_axis_x = (acos(axis_x)) * (180/pi),
-         spin_axis_y = (asin(axis_y)) * (180/pi))
+ff_R_clust <- as.data.frame(kmeans(ff_R, centers = 6)$centers)
 
 RFF <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
@@ -73,7 +74,7 @@ RFF <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(cluster = kmeans(ff_R, centers=3)$cluster,
+  mutate(cluster = kmeans(ff_R, centers=6)$cluster,
          pitch_subtype = paste0(pitch_type,cluster))
 
 
@@ -82,26 +83,24 @@ RFF <- pitches |>
 ff_L <- dat |>
   filter(pitch_type == "FF",
          p_throws == "L") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate, axis_x, axis_y)
+  select(release_speed, pfx_x, pfx_z, release_spin_rate) |>
+  scale()
 
 sse_ff_L <- numeric(length(clust))
 
 for (i in clust) {
-  k_means <- kmeans(ff_L, centers=i)
+  set.seed(740)
+  k_means <- kmeans(ff_L, centers=i, iter.max=200, algorithm="MacQueen")
   sse_ff_L[i] <- k_means$tot.withinss
 }
 
-plot(1:8, sse_ff_L, type="b",
+plot(1:20, sse_ff_L, type="b",
      xlab = "Number of Clusters",
      yla = "Within groups sum of squares")
- 
-ff_L_clust <- as.data.frame(kmeans(ff_L, centers = 3)$centers)
 
-ff_L_means <- ff_L_clust |>
-  mutate(horz = pfx_x * 12,
-         vert = pfx_z * 12,
-         spin_axis_x = (acos(axis_x)) * (180/pi),
-         spin_axis_y = (asin(axis_y)) * (180/pi))
+# 6
+
+ff_L_clust <- as.data.frame(kmeans(ff_L, centers = 6)$centers)
 
 LFF <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
@@ -113,7 +112,7 @@ LFF <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(cluster = kmeans(ff_L, centers=3)$cluster,
+  mutate(cluster = kmeans(ff_L, centers=6)$cluster,
          pitch_subtype = paste0(pitch_type,cluster))
 
 
@@ -123,26 +122,23 @@ LFF <- pitches |>
 sl_R <- dat |>
   filter(pitch_type == "SL",
          p_throws == "R") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate, axis_x, axis_y)
+  select(release_speed, pfx_x, pfx_z, release_spin_rate) |>
+  scale()
 
 sse_sl_R <- numeric(length(clust))
 
 for (i in clust) {
-  k_means <- kmeans(sl_R, centers=i)
+  k_means <- kmeans(sl_R, centers=i, iter.max=200, algorithm="MacQueen")
   sse_sl_R[i] <- k_means$tot.withinss
 }
 
-plot(1:8, sse_sl_R, type="b",
+plot(1:20, sse_sl_R, type="b",
      xlab = "Number of Clusters",
      yla = "Within groups sum of squares")
 
-sl_R_clust <- as.data.frame(kmeans(sl_R, centers = 3)$centers)
+# 5
 
-sl_R_means <- sl_R_clust |>
-  mutate(horz = pfx_x * 12,
-         vert = pfx_z * 12,
-         spin_axis_x = (acos(axis_x)) * (180/pi),
-         spin_axis_y = (asin(axis_y)) * (180/pi))
+sl_R_clust <- as.data.frame(kmeans(sl_R, centers = 5)$centers)
 
 RSL <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
@@ -154,7 +150,7 @@ RSL <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(cluster = kmeans(sl_R, centers=3)$cluster,
+  mutate(cluster = kmeans(sl_R, centers=5)$cluster,
          pitch_subtype = paste0(pitch_type,cluster))
 
 
@@ -164,26 +160,24 @@ RSL <- pitches |>
 sl_L <- dat |>
   filter(pitch_type == "SL",
          p_throws == "L") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate, axis_x, axis_y)
+  select(release_speed, pfx_x, pfx_z, release_spin_rate) |>
+  scale()
 
 sse_sl_L <- numeric(length(clust))
 
 for (i in clust) {
-  k_means <- kmeans(sl_L, centers=i)
+  set.seed(740)
+  k_means <- kmeans(sl_L, centers=i, iter.max=200, algorithm="MacQueen")
   sse_sl_L[i] <- k_means$tot.withinss
 }
 
-plot(1:8, sse_sl_L, type="b",
+plot(1:20, sse_sl_L, type="b",
      xlab = "Number of Clusters",
      yla = "Within groups sum of squares")
 
-sl_L_clust <- as.data.frame(kmeans(sl_L, centers = 3)$centers)
+# 4
 
-sl_L_means <- sl_L_clust |>
-  mutate(horz = pfx_x * 12,
-         vert = pfx_z * 12,
-         spin_axis_x = (acos(axis_x)) * (180/pi),
-         spin_axis_y = (asin(axis_y)) * (180/pi))
+sl_L_clust <- as.data.frame(kmeans(sl_L, centers = 4)$centers)
 
 LSL <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
@@ -195,7 +189,7 @@ LSL <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(cluster = kmeans(sl_L, centers=3)$cluster,
+  mutate(cluster = kmeans(sl_L, centers=4)$cluster,
          pitch_subtype = paste0(pitch_type,cluster))
 
 
@@ -205,26 +199,24 @@ LSL <- pitches |>
 si_R <- dat |>
   filter(pitch_type == "SI",
          p_throws == "R") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate, axis_x, axis_y)
+  select(release_speed, pfx_x, pfx_z, release_spin_rate) |>
+  scale()
 
 sse_si_R <- numeric(length(clust))
 
 for (i in clust) {
-  k_means <- kmeans(si_R, centers=i)
+  set.seed(740)
+  k_means <- kmeans(si_R, centers=i, iter.max=200, algorithm="MacQueen")
   sse_si_R[i] <- k_means$tot.withinss
 }
 
-plot(1:8, sse_si_R, type="b",
+plot(1:20, sse_si_R, type="b",
      xlab = "Number of Clusters",
      yla = "Within groups sum of squares")
 
-si_R_clust <- as.data.frame(kmeans(si_R, centers = 3)$centers)
+# 5
 
-si_R_means <- si_R_clust |>
-  mutate(horz = pfx_x * 12,
-         vert = pfx_z * 12,
-         spin_axis_x = (acos(axis_x)) * (180/pi),
-         spin_axis_y = (asin(axis_y)) * (180/pi))
+si_R_clust <- as.data.frame(kmeans(si_R, centers = 5)$centers)
 
 RSI <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
@@ -236,7 +228,7 @@ RSI <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(cluster = kmeans(si_R, centers=3)$cluster,
+  mutate(cluster = kmeans(si_R, centers=5)$cluster,
          pitch_subtype = paste0(pitch_type,cluster))
 
 
@@ -246,26 +238,24 @@ RSI <- pitches |>
 si_L <- dat |>
   filter(pitch_type == "SI",
          p_throws == "L") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate, axis_x, axis_y)
+  select(release_speed, pfx_x, pfx_z, release_spin_rate) |>
+  scale()
 
 sse_si_L <- numeric(length(clust))
 
 for (i in clust) {
-  k_means <- kmeans(si_L, centers=i)
+  set.seed(740)
+  k_means <- kmeans(si_L, centers=i, iter.max=200, algorithm="MacQueen")
   sse_si_L[i] <- k_means$tot.withinss
 }
 
-plot(1:8, sse_si_L, type="b",
+plot(1:20, sse_si_L, type="b",
      xlab = "Number of Clusters",
      yla = "Within groups sum of squares")
 
-si_L_clust <- as.data.frame(kmeans(si_L, centers = 3)$centers)
+# 5
 
-si_L_means <- si_L_clust |>
-  mutate(horz = pfx_x * 12,
-         vert = pfx_z * 12,
-         spin_axis_x = (acos(axis_x)) * (180/pi),
-         spin_axis_y = (asin(axis_y)) * (180/pi))
+si_L_clust <- as.data.frame(kmeans(si_L, centers = 5)$centers)
 
 LSI <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
@@ -277,7 +267,7 @@ LSI <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(cluster = kmeans(si_L, centers=3)$cluster,
+  mutate(cluster = kmeans(si_L, centers=5)$cluster,
          pitch_subtype = paste0(pitch_type,cluster))
 
 
@@ -287,26 +277,24 @@ LSI <- pitches |>
 ch_R <- dat |>
   filter(pitch_type == "CH",
          p_throws == "R") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate, axis_x, axis_y)
+  select(release_speed, pfx_x, pfx_z, release_spin_rate) |>
+  scale()
 
 sse_ch_R <- numeric(length(clust))
 
 for (i in clust) {
-  k_means <- kmeans(ch_R, centers=i)
+  set.seed(740)
+  k_means <- kmeans(ch_R, centers=i, iter.max=200, algorithm="MacQueen")
   sse_ch_R[i] <- k_means$tot.withinss
 }
 
-plot(1:8, sse_ch_R, type="b",
+plot(1:20, sse_ch_R, type="b",
      xlab = "Number of Clusters",
      yla = "Within groups sum of squares")
 
-ch_R_clust <- as.data.frame(kmeans(ch_R, centers = 3)$centers)
+# 6
 
-ch_R_means <- ch_R_clust |>
-  mutate(horz = pfx_x * 12,
-         vert = pfx_z * 12,
-         spin_axis_x = (acos(axis_x)) * (180/pi),
-         spin_axis_y = (asin(axis_y)) * (180/pi))
+ch_R_clust <- as.data.frame(kmeans(ch_R, centers = 6)$centers)
 
 RCH <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
@@ -318,7 +306,7 @@ RCH <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(cluster = kmeans(ch_R, centers=3)$cluster,
+  mutate(cluster = kmeans(ch_R, centers=6)$cluster,
          pitch_subtype = paste0(pitch_type,cluster))
 
 
@@ -328,26 +316,24 @@ RCH <- pitches |>
 ch_L <- dat |>
   filter(pitch_type == "CH",
          p_throws == "L") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate, axis_x, axis_y)
+  select(release_speed, pfx_x, pfx_z, release_spin_rate) |>
+  scale()
 
 sse_ch_L <- numeric(length(clust))
 
 for (i in clust) {
-  k_means <- kmeans(ch_L, centers=i)
+  set.seed(740)
+  k_means <- kmeans(ch_L, centers=i, iter.max=200, algorithm="MacQueen")
   sse_ch_L[i] <- k_means$tot.withinss
 }
 
-plot(1:8, sse_ch_L, type="b",
+plot(1:20, sse_ch_L, type="b",
      xlab = "Number of Clusters",
      yla = "Within groups sum of squares")
 
-ch_L_clust <- as.data.frame(kmeans(ch_L, centers = 3)$centers)
+# 5
 
-ch_L_means <- ch_L_clust |>
-  mutate(horz = pfx_x * 12,
-         vert = pfx_z * 12,
-         spin_axis_x = (acos(axis_x)) * (180/pi),
-         spin_axis_y = (asin(axis_y)) * (180/pi))
+ch_L_clust <- as.data.frame(kmeans(ch_L, centers = 5)$centers)
 
 LCH <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
@@ -359,7 +345,7 @@ LCH <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(cluster = kmeans(ch_L, centers=3)$cluster,
+  mutate(cluster = kmeans(ch_L, centers=5)$cluster,
          pitch_subtype = paste0(pitch_type,cluster))
 
 
@@ -369,26 +355,24 @@ LCH <- pitches |>
 cu_R <- dat |>
   filter(pitch_type == "CU",
          p_throws == "R") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate, axis_x, axis_y)
+  select(release_speed, pfx_x, pfx_z, release_spin_rate) |>
+  scale()
 
 sse_cu_R <- numeric(length(clust))
 
 for (i in clust) {
-  k_means <- kmeans(cu_R, centers=i)
+  set.seed(740)
+  k_means <- kmeans(cu_R, centers=i, iter.max=200, algorithm="MacQueen")
   sse_cu_R[i] <- k_means$tot.withinss
 }
 
-plot(1:8, sse_cu_R, type="b",
+plot(1:20, sse_cu_R, type="b",
      xlab = "Number of Clusters",
      yla = "Within groups sum of squares")
 
-cu_R_clust <- as.data.frame(kmeans(cu_R, centers = 3)$centers)
+# 5
 
-cu_R_means <- cu_R_clust |>
-  mutate(horz = pfx_x * 12,
-         vert = pfx_z * 12,
-         spin_axis_x = (acos(axis_x)) * (180/pi),
-         spin_axis_y = (asin(axis_y)) * (180/pi))
+cu_R_clust <- as.data.frame(kmeans(cu_R, centers = 5)$centers)
 
 RCU <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
@@ -400,7 +384,7 @@ RCU <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(cluster = kmeans(cu_R, centers=3)$cluster,
+  mutate(cluster = kmeans(cu_R, centers=5)$cluster,
          pitch_subtype = paste0(pitch_type,cluster))
 
 
@@ -410,26 +394,24 @@ RCU <- pitches |>
 cu_L <- dat |>
   filter(pitch_type == "CU",
          p_throws == "L") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate, axis_x, axis_y)
+  select(release_speed, pfx_x, pfx_z, release_spin_rate) |>
+  scale()
 
 sse_cu_L <- numeric(length(clust))
 
 for (i in clust) {
-  k_means <- kmeans(cu_L, centers=i)
+  set.seed(740)
+  k_means <- kmeans(cu_L, centers=i, iter.max=200, algorithm="MacQueen")
   sse_cu_L[i] <- k_means$tot.withinss
 }
 
-plot(1:8, sse_cu_L, type="b",
+plot(1:20, sse_cu_L, type="b",
      xlab = "Number of Clusters",
      yla = "Within groups sum of squares")
 
-cu_L_clust <- as.data.frame(kmeans(cu_L, centers = 3)$centers)
+# 6
 
-cu_L_means <- cu_L_clust |>
-  mutate(horz = pfx_x * 12,
-         vert = pfx_z * 12,
-         spin_axis_x = (acos(axis_x)) * (180/pi),
-         spin_axis_y = (asin(axis_y)) * (180/pi))
+cu_L_clust <- as.data.frame(kmeans(cu_L, centers = 6)$centers)
 
 LCU <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
@@ -441,7 +423,7 @@ LCU <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(cluster = kmeans(cu_L, centers=3)$cluster,
+  mutate(cluster = kmeans(cu_L, centers=6)$cluster,
          pitch_subtype = paste0(pitch_type,cluster))
 
 
@@ -451,26 +433,24 @@ LCU <- pitches |>
 fc_R <- dat |>
   filter(pitch_type == "FC",
          p_throws == "R") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate, axis_x, axis_y)
+  select(release_speed, pfx_x, pfx_z, release_spin_rate) |>
+  scale()
 
 sse_fc_R <- numeric(length(clust))
 
 for (i in clust) {
-  k_means <- kmeans(fc_R, centers=i)
+  set.seed(740)
+  k_means <- kmeans(fc_R, centers=i, iter.max=200, algorithm="MacQueen")
   sse_fc_R[i] <- k_means$tot.withinss
 }
 
-plot(1:8, sse_fc_R, type="b",
+plot(1:20, sse_fc_R, type="b",
      xlab = "Number of Clusters",
      yla = "Within groups sum of squares")
 
-fc_R_clust <- as.data.frame(kmeans(fc_R, centers = 3)$centers)
+# 5
 
-fc_R_means <- fc_R_clust |>
-  mutate(horz = pfx_x * 12,
-         vert = pfx_z * 12,
-         spin_axis_x = (acos(axis_x)) * (180/pi),
-         spin_axis_y = (asin(axis_y)) * (180/pi))
+fc_R_clust <- as.data.frame(kmeans(fc_R, centers = 5)$centers)
 
 RFC <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
@@ -482,7 +462,7 @@ RFC <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(cluster = kmeans(fc_R, centers=3)$cluster,
+  mutate(cluster = kmeans(fc_R, centers=5)$cluster,
          pitch_subtype = paste0(pitch_type,cluster))
 
 
@@ -492,26 +472,24 @@ RFC <- pitches |>
 fc_L <- dat |>
   filter(pitch_type == "FC",
          p_throws == "L") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate, axis_x, axis_y)
+  select(release_speed, pfx_x, pfx_z, release_spin_rate) |>
+  scale()
 
 sse_fc_L <- numeric(length(clust))
 
 for (i in clust) {
-  k_means <- kmeans(fc_L, centers=i)
+  set.seed(740)
+  k_means <- kmeans(fc_L, centers=i, iter.max=200, algorithm="MacQueen")
   sse_fc_L[i] <- k_means$tot.withinss
 }
 
-plot(1:8, sse_fc_L, type="b",
+plot(1:20, sse_fc_L, type="b",
      xlab = "Number of Clusters",
      yla = "Within groups sum of squares")
 
-fc_L_clust <- as.data.frame(kmeans(fc_L, centers = 3)$centers)
+# 5
 
-fc_L_means <- fc_L_clust |>
-  mutate(horz = pfx_x * 12,
-         vert = pfx_z * 12,
-         spin_axis_x = (acos(axis_x)) * (180/pi),
-         spin_axis_y = (asin(axis_y)) * (180/pi))
+fc_L_clust <- as.data.frame(kmeans(fc_L, centers = 5)$centers)
 
 LFC <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
@@ -523,7 +501,7 @@ LFC <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(cluster = kmeans(fc_L, centers=3)$cluster,
+  mutate(cluster = kmeans(fc_L, centers=5)$cluster,
          pitch_subtype = paste0(pitch_type,cluster))
 
 
@@ -533,26 +511,24 @@ LFC <- pitches |>
 st_R <- dat |>
   filter(pitch_type == "ST",
          p_throws == "R") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate, axis_x, axis_y)
+  select(release_speed, pfx_x, pfx_z, release_spin_rate) |>
+  scale()
 
 sse_st_R <- numeric(length(clust))
 
 for (i in clust) {
-  k_means <- kmeans(st_R, centers=i)
+  set.seed(740)
+  k_means <- kmeans(st_R, centers=i, iter.max=200, algorithm="MacQueen")
   sse_st_R[i] <- k_means$tot.withinss
 }
 
-plot(1:8, sse_st_R, type="b",
+plot(1:20, sse_st_R, type="b",
      xlab = "Number of Clusters",
      yla = "Within groups sum of squares")
 
-st_R_clust <- as.data.frame(kmeans(st_R, centers = 3)$centers)
+# 5
 
-st_R_means <- st_R_clust |>
-  mutate(horz = pfx_x * 12,
-         vert = pfx_z * 12,
-         spin_axis_x = (acos(axis_x)) * (180/pi),
-         spin_axis_y = (asin(axis_y)) * (180/pi))
+st_R_clust <- as.data.frame(kmeans(st_R, centers = 5)$centers)
 
 RST <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
@@ -564,7 +540,7 @@ RST <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(cluster = kmeans(st_R, centers=3)$cluster,
+  mutate(cluster = kmeans(st_R, centers=5)$cluster,
          pitch_subtype = paste0(pitch_type,cluster))
 
 
@@ -574,26 +550,24 @@ RST <- pitches |>
 st_L <- dat |>
   filter(pitch_type == "ST",
          p_throws == "L") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate, axis_x, axis_y)
+  select(release_speed, pfx_x, pfx_z, release_spin_rate) |>
+  scale()
 
 sse_st_L <- numeric(length(clust))
 
 for (i in clust) {
-  k_means <- kmeans(st_L, centers=i)
+  set.seed(740)
+  k_means <- kmeans(st_L, centers=i, iter.max=200, algorithm="MacQueen")
   sse_st_L[i] <- k_means$tot.withinss
 }
 
-plot(1:8, sse_st_L, type="b",
+plot(1:20, sse_st_L, type="b",
      xlab = "Number of Clusters",
      yla = "Within groups sum of squares")
 
-st_L_clust <- as.data.frame(kmeans(st_L, centers = 3)$centers)
+# 5
 
-st_L_means <- st_L_clust |>
-  mutate(horz = pfx_x * 12,
-         vert = pfx_z * 12,
-         spin_axis_x = (acos(axis_x)) * (180/pi),
-         spin_axis_y = (asin(axis_y)) * (180/pi))
+st_L_clust <- as.data.frame(kmeans(st_L, centers = 5)$centers)
 
 LST <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
@@ -605,7 +579,7 @@ LST <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(cluster = kmeans(st_L, centers=3)$cluster,
+  mutate(cluster = kmeans(st_L, centers=5)$cluster,
          pitch_subtype = paste0(pitch_type,cluster))
 
 
@@ -615,26 +589,24 @@ LST <- pitches |>
 fs_R <- dat |>
   filter(pitch_type == "FS",
          p_throws == "R") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate, axis_x, axis_y)
+  select(release_speed, pfx_x, pfx_z, release_spin_rate) |>
+  scale()
 
 sse_fs_R <- numeric(length(clust))
 
 for (i in clust) {
-  k_means <- kmeans(fs_R, centers=i)
+  set.seed(740)
+  k_means <- kmeans(fs_R, centers=i, iter.max=200, algorithm="MacQueen")
   sse_fs_R[i] <- k_means$tot.withinss
 }
 
-plot(1:8, sse_fs_R, type="b",
+plot(1:20, sse_fs_R, type="b",
      xlab = "Number of Clusters",
      yla = "Within groups sum of squares")
 
-fs_R_clust <- as.data.frame(kmeans(fs_R, centers = 3)$centers)
+# 5
 
-fs_R_means <- fs_R_clust |>
-  mutate(horz = pfx_x * 12,
-         vert = pfx_z * 12,
-         spin_axis_x = (acos(axis_x)) * (180/pi),
-         spin_axis_y = (asin(axis_y)) * (180/pi))
+fs_R_clust <- as.data.frame(kmeans(fs_R, centers = 5)$centers)
 
 RFS <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
@@ -646,7 +618,7 @@ RFS <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(cluster = kmeans(fs_R, centers=3)$cluster,
+  mutate(cluster = kmeans(fs_R, centers=5)$cluster,
          pitch_subtype = paste0(pitch_type,cluster))
 
 
@@ -656,26 +628,24 @@ RFS <- pitches |>
 fs_L <- dat |>
   filter(pitch_type == "FS",
          p_throws == "L") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate, axis_x, axis_y)
+  select(release_speed, pfx_x, pfx_z, release_spin_rate) |>
+  scale()
 
 sse_fs_L <- numeric(length(clust))
 
 for (i in clust) {
-  k_means <- kmeans(fs_L, centers=i)
+  set.seed(740)
+  k_means <- kmeans(fs_L, centers=i, iter.max=200, algorithm="MacQueen")
   sse_fs_L[i] <- k_means$tot.withinss
 }
 
-plot(1:8, sse_fs_L, type="b",
+plot(1:20, sse_fs_L, type="b",
      xlab = "Number of Clusters",
      yla = "Within groups sum of squares")
 
-fs_L_clust <- as.data.frame(kmeans(fs_L, centers = 3)$centers)
+# 4
 
-fs_L_means <- fs_L_clust |>
-  mutate(horz = pfx_x * 12,
-         vert = pfx_z * 12,
-         spin_axis_x = (acos(axis_x)) * (180/pi),
-         spin_axis_y = (asin(axis_y)) * (180/pi))
+fs_L_clust <- as.data.frame(kmeans(fs_L, centers = 4)$centers)
 
 LFS <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
@@ -687,7 +657,7 @@ LFS <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(cluster = kmeans(fs_L, centers=3)$cluster,
+  mutate(cluster = kmeans(fs_L, centers=4)$cluster,
          pitch_subtype = paste0(pitch_type,cluster))
 
 
@@ -697,26 +667,24 @@ LFS <- pitches |>
 kc_R <- dat |>
   filter(pitch_type == "KC",
          p_throws == "R") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate, axis_x, axis_y)
+  select(release_speed, pfx_x, pfx_z, release_spin_rate) |>
+  scale()
 
 sse_kc_R <- numeric(length(clust))
 
 for (i in clust) {
-  k_means <- kmeans(kc_R, centers=i)
+  set.seed(740)
+  k_means <- kmeans(kc_R, centers=i, iter.max=200, algorithm="MacQueen")
   sse_kc_R[i] <- k_means$tot.withinss
 }
 
-plot(1:8, sse_kc_R, type="b",
+plot(1:20, sse_kc_R, type="b",
      xlab = "Number of Clusters",
      yla = "Within groups sum of squares")
 
-kc_R_clust <- as.data.frame(kmeans(kc_R, centers = 3)$centers)
+# 5
 
-kc_R_means <- kc_R_clust |>
-  mutate(horz = pfx_x * 12,
-         vert = pfx_z * 12,
-         spin_axis_x = (acos(axis_x)) * (180/pi),
-         spin_axis_y = (asin(axis_y)) * (180/pi))
+kc_R_clust <- as.data.frame(kmeans(kc_R, centers = 5)$centers)
 
 RKC <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
@@ -728,7 +696,7 @@ RKC <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(cluster = kmeans(kc_R, centers=3)$cluster,
+  mutate(cluster = kmeans(kc_R, centers=5)$cluster,
          pitch_subtype = paste0(pitch_type,cluster))
 
 
@@ -738,26 +706,24 @@ RKC <- pitches |>
 kc_L <- dat |>
   filter(pitch_type == "KC",
          p_throws == "L") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate, axis_x, axis_y)
+  select(release_speed, pfx_x, pfx_z, release_spin_rate) |>
+  scale()
 
 sse_kc_L <- numeric(length(clust))
 
 for (i in clust) {
-  k_means <- kmeans(kc_L, centers=i)
+  set.seed(740)
+  k_means <- kmeans(kc_L, centers=i, iter.max=200, algorithm="MacQueen")
   sse_kc_L[i] <- k_means$tot.withinss
 }
 
-plot(1:8, sse_kc_L, type="b",
+plot(1:20, sse_kc_L, type="b",
      xlab = "Number of Clusters",
      yla = "Within groups sum of squares")
 
-kc_L_clust <- as.data.frame(kmeans(kc_L, centers = 3)$centers)
+# 4
 
-kc_L_means <- kc_L_clust |>
-  mutate(horz = pfx_x * 12,
-         vert = pfx_z * 12,
-         spin_axis_x = (acos(axis_x)) * (180/pi),
-         spin_axis_y = (asin(axis_y)) * (180/pi))
+kc_L_clust <- as.data.frame(kmeans(kc_L, centers = 4)$centers)
 
 LKC <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
@@ -769,7 +735,7 @@ LKC <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(cluster = kmeans(kc_L, centers=3)$cluster,
+  mutate(cluster = kmeans(kc_L, centers=4)$cluster,
          pitch_subtype = paste0(pitch_type,cluster))
 
 
@@ -779,26 +745,24 @@ LKC <- pitches |>
 sv_R <- dat |>
   filter(pitch_type == "SV",
          p_throws == "R") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate, axis_x, axis_y)
+  select(release_speed, pfx_x, pfx_z, release_spin_rate) |>
+  scale()
 
 sse_sv_R <- numeric(length(clust))
 
 for (i in clust) {
-  k_means <- kmeans(sv_R, centers=i)
+  set.seed(740)
+  k_means <- kmeans(sv_R, centers=i, iter.max=200, algorithm="MacQueen")
   sse_sv_R[i] <- k_means$tot.withinss
 }
 
-plot(1:8, sse_sv_R, type="b",
+plot(1:20, sse_sv_R, type="b",
      xlab = "Number of Clusters",
      yla = "Within groups sum of squares")
 
-sv_R_clust <- as.data.frame(kmeans(sv_R, centers = 3)$centers)
+# 5
 
-sv_R_means <- sv_R_clust |>
-  mutate(horz = pfx_x * 12,
-         vert = pfx_z * 12,
-         spin_axis_x = (acos(axis_x)) * (180/pi),
-         spin_axis_y = (asin(axis_y)) * (180/pi))
+sv_R_clust <- as.data.frame(kmeans(sv_R, centers = 5)$centers)
 
 RSV <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
@@ -810,7 +774,7 @@ RSV <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(cluster = kmeans(sv_R, centers=3)$cluster,
+  mutate(cluster = kmeans(sv_R, centers=5)$cluster,
          pitch_subtype = paste0(pitch_type,cluster))
 
 
@@ -820,20 +784,24 @@ RSV <- pitches |>
 sv_L <- dat |>
   filter(pitch_type == "SV",
          p_throws == "L") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate, axis_x, axis_y)
+  select(release_speed, pfx_x, pfx_z, release_spin_rate) |>
+  scale()
 
 sse_sv_L <- numeric(length(clust))
 
 for (i in clust) {
-  k_means <- kmeans(sv_L, centers=i)
+  set.seed(740)
+  k_means <- kmeans(sv_L, centers=i, iter.max=200, algorithm="MacQueen")
   sse_sv_L[i] <- k_means$tot.withinss
 }
 
-plot(1:8, sse_sv_L, type="b",
+plot(1:20, sse_sv_L, type="b",
      xlab = "Number of Clusters",
      yla = "Within groups sum of squares")
 
-sv_L_clust <- as.data.frame(kmeans(sv_L, centers = 3)$centers)
+# 4
+
+sv_L_clust <- as.data.frame(kmeans(sv_L, centers = 4)$centers)
 
 sv_L_means <- sv_L_clust |>
   mutate(horz = pfx_x * 12,
@@ -851,47 +819,8 @@ LSV <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(cluster = kmeans(sv_L, centers=3)$cluster,
+  mutate(cluster = kmeans(sv_L, centers=4)$cluster,
          pitch_subtype = paste0(pitch_type,cluster))
 
-# Right-handed Forkball
-
-fo_R <- dat |>
-  filter(pitch_type == "FO",
-         p_throws == "R") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate, axis_x, axis_y)
-
-sse_fo_R <- numeric(length(clust))
-
-for (i in clust) {
-  k_means <- kmeans(fo_R, centers=i)
-  sse_fo_R[i] <- k_means$tot.withinss
-}
-
-plot(1:8, sse_fo_R, type="b",
-     xlab = "Number of Clusters",
-     yla = "Within groups sum of squares")
-
-fo_R_clust <- as.data.frame(kmeans(fo_R, centers = 3)$centers)
-
-fo_R_means <- fo_R_clust |>
-  mutate(horz = pfx_x * 12,
-         vert = pfx_z * 12,
-         spin_axis_x = (acos(axis_x)) * (180/pi),
-         spin_axis_y = (asin(axis_y)) * (180/pi))
-
-RFO <- pitches |>
-  filter(player_name %in% qualified_pitchers$player_name,
-         game_year == 2023,
-         pitch_type == "FO",
-         p_throws == "R",
-         !is.na(release_speed),
-         !is.na(pfx_x),
-         !is.na(pfx_z),
-         !is.na(release_spin_rate),
-         !is.na(spin_axis)) |>
-  mutate(cluster = kmeans(fo_R, centers=3)$cluster,
-         pitch_subtype = paste0(pitch_type,cluster))
-#Seeing as all Forkballs are Kodai Senga, there is no reason to include them as it lacks the generality desired for this research
 
 

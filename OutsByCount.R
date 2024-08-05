@@ -30,10 +30,11 @@ p2 <- left_join(p1, outcome, by = "at_bat_id")
 
 # Defining which events are batter outs
 
-outs <- c("double_play", "field_out", "fielders_choice", "fielders_choice_out", "force_out", "grounded_into_double_play", "strikeout", "strikeout_double_play", "triple_play", "sac_bunt_double_play", "sac_fly_double_play")
+outs <- c("double_play", "field_out", "fielders_choice", "fielders_choice_out", "force_out", "grounded_into_double_play", "strikeout", "strikeout_double_play", "triple_play", "sac_bunt_double_play", "sac_fly_double_play", "sac_bunt", "sac_fly")
 # Not sure if errors should count (I think yes) and not sure about sacrifices (sac double plays for sure but idk about normal sac bunt/fly)
 
-p2 |>
+p3 <- p2 |>
+  filter(!str_detect(ending_event, "sac")) |>
   distinct(at_bat_id, balls, strikes, .keep_all=T) |>
   group_by(balls, strikes) |>
   reframe(
@@ -42,10 +43,17 @@ p2 |>
     percent_out = outs/count
   ) |>
   filter(balls <4,
-         strikes<3
-  ) |>
+         strikes<3,
+  ) # After double checking, the 8 cases where the pre-pitch count had 3 strikes or 4 balls are not data errors, but umpire errors (I think)
+
+p3 |>
   ggplot(
-    aes(x=strikes, y=percent_out, color=as.factor(balls))) +
+    aes(x=balls, y=percent_out, color=as.factor(strikes))) +
   geom_path() +
-  geom_point()
-# After double checking, the 8 cases where the pre-pitch count had 3 strikes or 4 balls are not data errors, but umpire errors (I think)
+  geom_point() +
+  labs(
+    title = "Pitcher-caused Out Percentage by Count",
+    x = "Balls",
+    y = "Percent of PAs ending in an out",
+    color = "Strikes"
+  )
