@@ -12,7 +12,7 @@ pitches <- read_csv("savant_pitch_level.csv")
 
 table(pitches$pitch_type)
 
-dd <- pitches |> filter(player_name == "Duffy, Danny")
+#dd <- pitches |> filter(player_name == "Duffy, Danny")
 
 #density(pitches$spin_axis)
 
@@ -39,6 +39,9 @@ table(dat$pitch_type)
 
 table(dat$pitch_type, dat$p_throws)
 
+
+
+### Clustering ###
 
 # Right-handed 4-seam
 
@@ -661,6 +664,15 @@ plot(1:20, sse_fs_L, type="b",
 #  mutate(cluster = kmeans(fs_L, centers=_)$cluster,
 #         pitch_subtype = paste0(pitch_type,cluster))
 
+pitches |>
+  filter(player_name == "Rom, Drew",
+         game_year == 2023,
+         role_key == "SP") |>
+  group_by(pitch_type) |> 
+  reframe(count = n())
+
+# Cool Drew Rom shout-out
+
 
 
 # Right-handed Knuckle-curve
@@ -778,6 +790,8 @@ RSV <- pitches |>
   mutate(cluster = kmeans(sv_R, centers=5)$cluster,
          pitch_subtype = paste0(pitch_type,cluster))
 
+# Jose Berrios + Marcus Stroman, so not using
+
 
 
 # Left-handed Slurve
@@ -817,5 +831,98 @@ LSV <- pitches |>
   mutate(cluster = kmeans(sv_L, centers=4)$cluster,
          pitch_subtype = paste0(pitch_type,cluster))
 
+# Julio Urias + Kyle Harrison, so not using this either
+
+# Cluster visualizations
+
+pitch <- rep(c("4-Seam", "Slider", "Sinker", "Changeup", "Curveball", "Cutter", "Sweeper", "Split-Finger", "Knuckle-Curve"), each=2)
+handed <- rep(c("RHP", "LHP"), 9)
+clusters <- c(6, 5, 6, 5, 5, 5, 6, 5, 5, 6, 5, 5, 5, 4, 4, 0, 5, 4)
+
+clust_viz <- data.frame(pitch, handed, clusters)
+
+clust_viz |>
+  ggplot(
+    aes(x=pitch, y=clusters, fill=handed) 
+  ) +  
+  geom_text(
+    aes(label=clusters), 
+    position=position_dodge(width=0.9), 
+    vjust=-0.5  # Adjust the vertical position of the labels
+  ) + 
+  geom_col(position="dodge") +
+  labs(
+    title = "Clusters by Pitch Type and Handedness",
+    x = "Primary Pitch Type",
+    y = "Number of Clusters",
+    fill = "Pitcher"
+  ) +
+  theme_minimal() + 
+  theme(
+    axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)
+  )
+
+clust_viz |>
+  ggplot(
+    aes(x=pitch, y=clusters, fill=handed)
+  ) + 
+  geom_col(position="dodge") + 
+  geom_text(
+    aes(label=clusters), 
+    position=position_dodge(width=0.9), 
+    vjust=-0.5
+  ) + 
+  labs(
+    title = "Clusters by Pitch Type and Handedness",
+    x = "Primary Pitch Type",
+    y = "Number of Clusters",
+    fill = "Pitcher"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)
+  ) +
+  facet_wrap(~handed)
+
+# Cluster center physical characteristics
+
+attr(ff_R, "scaled:center")
+attr(ff_R, "scaled:scale")
+
+### Sequencing ###
+
+# Put all the pitches together
+
+dat1 <- rbind(RFF, RSL, RSI, RCH, RFC, RCU, RST, RFS, RKC,
+              LFF, LCH, LSL, LSI, LCU, LFC, LST, LKC)
+
+# Add at_bat_id to the pitches
+
+dat2 <- dat1 |> 
+  group_by(game_pk, at_bat_number) |>
+  mutate(
+    at_bat_id = cur_group_id()
+  ) |>
+  ungroup()
+
+view(head(dat2))
+
+# Create a variable for the previous pitch, both the primary type and the subtype
+
+dat3 <- dat2 |>
+  arrange(at_bat_id, pitch_number) |>
+  group_by(at_bat_id) |> 
+  mutate(prev_type = lag(pitch_type),
+         prev_subtype = lag(pitch_subtype)) |>
+  ungroup()
+  
+# 
+
+hits <- c("double", "home_run", "single", "triple")
+outs <- c("double_play", "field_out", "fielders_choice", "fielders_choice_out", "force_out", "grounded_into_double_play", "strikeout", "strikeout_double_play", "triple_play", "sac_bunt_double_play", "sac_fly_double_play", "sac_bunt", "sac_fly")
 
 
+dat3 |>
+  mutate(
+    
+  )

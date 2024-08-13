@@ -46,6 +46,10 @@ p3 <- p2 |>
          strikes<3,
   ) # After double checking, the 8 cases where the pre-pitch count had 3 strikes or 4 balls are not data errors, but umpire errors (I think)
 
+p3
+
+# At 0-0, we start at a .676 probability of an out
+
 p3 |>
   ggplot(
     aes(x=balls, y=percent_out, color=as.factor(strikes))) +
@@ -56,4 +60,53 @@ p3 |>
     x = "Balls",
     y = "Percent of PAs ending in an out",
     color = "Strikes"
-  )
+  ) +
+  theme_minimal()
+
+p3 |>
+  ggplot(
+    aes(x=strikes, y=percent_out, color=as.factor(balls))) +
+  geom_path() +
+  geom_point() +
+  labs(
+    title = "Pitcher-caused Out Percentage by Count",
+    x = "Balls",
+    y = "Percent of PAs ending in an out",
+    color = "Strikes"
+  ) +
+  theme_minimal()
+
+out_value <- c(-0.057, 0.051, -0.112, 0.068, -0.032, 0.069, -0.084, 0.081, -0.196, 0.102, -0.063, 0.232, -0.164, 0.295,)
+balls <- c(0,0,1,1,0,0,1,1,2,2,1,1,2,2,3,3)
+strikes <- c(0,0,0,0,1,1,1,1,1,1,2,2,2,2,2,2)
+post_balls <- c(1,0,2,1,1,2,1,3,2,2,1,3,2)
+post_strikes <- C(0,1,0,1,1,1,2,1,2,2,3,2,3)
+  
+
+strikeout <- data.frame(balls = c(0:3), strikes = 3, percent_out = 1)
+
+walk <- data.frame(balls = 4, strikes = 0:2, percent_out = 0)
+
+p4 <- p3 |>
+  select(1,2,5) |>
+  rbind(strikeout, walk)
+
+p4
+
+out_values <- cross_join(p4,p4) |>
+  rename(pre_balls = balls.x,
+         pre_strikes = strikes.x ,
+         pre_prob = percent_out.x,
+         post_balls = balls.y,
+         post_strikes = strikes.y,
+         post_prob = percent_out.y
+  ) |>
+  filter(pre_balls <= 3,
+         pre_strikes <= 2,
+         pre_balls == post_balls & pre_strikes + 1 == post_strikes |
+           pre_balls + 1 == post_balls & pre_strikes == post_strikes) |>
+  mutate(out_value = post_prob - pre_prob)
+
+view(out_values)
+
+
