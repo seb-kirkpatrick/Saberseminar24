@@ -55,7 +55,7 @@ sse_ff_R <- numeric(length(clust))
 
 for (i in clust) {
   set.seed(740)
-  k_means <- kmeans(ff_R, centers=i, iter.max=200, algorithm="MacQueen")
+  k_means <- kmeans(ff_R, centers=i, iter.max=300, algorithm="MacQueen")
   sse_ff_R[i] <- k_means$tot.withinss
 }
 
@@ -946,9 +946,47 @@ pre_pitch_prob <- p3 |>
 dat4 <- dat3 |>
   left_join(pre_pitch_prob, by = c("balls", "strikes"))
 
-#
+# Establish dummy variables for when a batter gets a base or when an out occurs and make the count after the pitch
 
+not_out_event <- c("double", "home_run", "single", "triple", "hit_by_pitch", "walk")
+out_event <- c("double_play", "field_out", "fielders_choice", "fielders_choice_out", "force_out", "grounded_into_double_play", "strikeout", "strikeout_double_play", "triple_play")
+balls_p  <- c("ball", "blocked_ball")
+strikes_p <- c("called_strike", "foul", "foul_tip", "swinging_strike", "swinging_strike_blocked")
 
+dat5 <- dat4 |>
+  mutate(
+    is_base = events %in% not_out_event,
+    is_out = events %in% out_event,
+    post_balls =
+      ifelse(!is_out & !is_base & description %in% balls_p, balls + 1, balls),
+    post_strikes = case_when(
+      !is_out & !is_base & description %in% strikes_p & strikes == 2 ~ 2,
+      !is_out & !is_base & description %in% strikes_p ~ strikes + 1,
+      TRUE ~ strikes
+      ),
+  )
 
-hits <- c("double", "home_run", "single", "triple")
-outs <- c("double_play", "field_out", "fielders_choice", "fielders_choice_out", "force_out", "grounded_into_double_play", "strikeout", "strikeout_double_play", "triple_play", "sac_bunt_double_play", "sac_fly_double_play", "sac_bunt", "sac_fly")
+# Assign post-pitch probality of an out and construct the out value created by the pitch
+
+post_pitch_prob <- p3 |>
+  select("balls", "strikes", "percent_out") |>
+  rename(
+    post_prob = percent_out,
+    post_balls = balls,
+    post_strikes = strikes
+  )
+
+dat6 <- dat5 |>
+  left_join(post_pitch_prob, by = c("post_balls", "post_strikes")) |>
+  mutate(post_prob = case_when(
+    is_out ~ 1,
+    is_base ~ 0,
+    TRUE ~ post_prob
+    )
+  ) |>
+  filter(
+    !events %in% c("field_error","catcher_interf","caught_stealing_2b","caught_stealing_3b","caught_stealing_home","pickoff_1b","pickoff_2b","pickoff_3b","pickoff_caught_stealing_2b","sac_bunt", "sac_fly","sac_fly_double_play","other_out"),
+    !description %in% c("bunt_foul_tip","foul_bunt","missed_bunt")) |>
+  mutate(out_value = post_prob - pre_prob)
+  
+
