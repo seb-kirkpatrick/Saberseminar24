@@ -1,6 +1,5 @@
-library(baseballr)
+#library(baseballr)
 library(tidyverse)
-library(readr)
 library(cluster)
 
 pitches <- read_csv("savant_pitch_level.csv")
@@ -87,7 +86,7 @@ RFF <- pitches |>
 ff_L <- dat |>
   filter(pitch_type == "FF",
          p_throws == "L") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate) |>
+  select(release_speed, horz, vert, release_spin_rate) |>
   scale()
 
 sse_ff_L <- numeric(length(clust))
@@ -126,7 +125,7 @@ LFF <- pitches |>
 sl_R <- dat |>
   filter(pitch_type == "SL",
          p_throws == "R") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate) |>
+  select(release_speed, horz, vert, release_spin_rate) |>
   scale()
 
 sse_sl_R <- numeric(length(clust))
@@ -164,7 +163,7 @@ RSL <- pitches |>
 sl_L <- dat |>
   filter(pitch_type == "SL",
          p_throws == "L") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate) |>
+  select(release_speed, horz, vert, release_spin_rate) |>
   scale()
 
 sse_sl_L <- numeric(length(clust))
@@ -203,7 +202,7 @@ LSL <- pitches |>
 si_R <- dat |>
   filter(pitch_type == "SI",
          p_throws == "R") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate) |>
+  select(release_speed, horz, vert, release_spin_rate) |>
   scale()
 
 sse_si_R <- numeric(length(clust))
@@ -242,7 +241,7 @@ RSI <- pitches |>
 si_L <- dat |>
   filter(pitch_type == "SI",
          p_throws == "L") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate) |>
+  select(release_speed, horz, vert, release_spin_rate) |>
   scale()
 
 sse_si_L <- numeric(length(clust))
@@ -281,7 +280,7 @@ LSI <- pitches |>
 ch_R <- dat |>
   filter(pitch_type == "CH",
          p_throws == "R") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate) |>
+  select(release_speed, horz, vert, release_spin_rate) |>
   scale()
 
 sse_ch_R <- numeric(length(clust))
@@ -320,7 +319,7 @@ RCH <- pitches |>
 ch_L <- dat |>
   filter(pitch_type == "CH",
          p_throws == "L") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate) |>
+  select(release_speed, horz, vert, release_spin_rate) |>
   scale()
 
 sse_ch_L <- numeric(length(clust))
@@ -359,7 +358,7 @@ LCH <- pitches |>
 cu_R <- dat |>
   filter(pitch_type == "CU",
          p_throws == "R") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate) |>
+  select(release_speed, horz, vert, release_spin_rate) |>
   scale()
 
 sse_cu_R <- numeric(length(clust))
@@ -398,7 +397,7 @@ RCU <- pitches |>
 cu_L <- dat |>
   filter(pitch_type == "CU",
          p_throws == "L") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate) |>
+  select(release_speed, horz, vert, release_spin_rate) |>
   scale()
 
 sse_cu_L <- numeric(length(clust))
@@ -437,7 +436,7 @@ LCU <- pitches |>
 fc_R <- dat |>
   filter(pitch_type == "FC",
          p_throws == "R") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate) |>
+  select(release_speed, horz, vert, release_spin_rate) |>
   scale()
 
 sse_fc_R <- numeric(length(clust))
@@ -476,7 +475,7 @@ RFC <- pitches |>
 fc_L <- dat |>
   filter(pitch_type == "FC",
          p_throws == "L") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate) |>
+  select(release_speed, horz, vert, release_spin_rate) |>
   scale()
 
 sse_fc_L <- numeric(length(clust))
@@ -515,7 +514,7 @@ LFC <- pitches |>
 st_R <- dat |>
   filter(pitch_type == "ST",
          p_throws == "R") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate) |>
+  select(release_speed, horz, vert, release_spin_rate) |>
   scale()
 
 sse_st_R <- numeric(length(clust))
@@ -554,7 +553,7 @@ RST <- pitches |>
 st_L <- dat |>
   filter(pitch_type == "ST",
          p_throws == "L") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate) |>
+  select(release_speed, horz, vert, release_spin_rate) |>
   scale()
 
 sse_st_L <- numeric(length(clust))
@@ -593,7 +592,7 @@ LST <- pitches |>
 fs_R <- dat |>
   filter(pitch_type == "FS",
          p_throws == "R") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate) |>
+  select(release_speed, horz, vert, release_spin_rate) |>
   scale()
 
 sse_fs_R <- numeric(length(clust))
@@ -632,7 +631,7 @@ RFS <- pitches |>
 fs_L <- dat |>
   filter(pitch_type == "FS",
          p_throws == "L") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate) |>
+  select(release_speed, horz, vert, release_spin_rate) |>
   scale()
 
 sse_fs_L <- numeric(length(clust))
@@ -680,7 +679,7 @@ pitches |>
 kc_R <- dat |>
   filter(pitch_type == "KC",
          p_throws == "R") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate) |>
+  select(release_speed, horz, vert, release_spin_rate) |>
   scale()
 
 sse_kc_R <- numeric(length(clust))
@@ -719,7 +718,7 @@ RKC <- pitches |>
 kc_L <- dat |>
   filter(pitch_type == "KC",
          p_throws == "L") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate) |>
+  select(release_speed, horz, vert, release_spin_rate) |>
   scale()
 
 sse_kc_L <- numeric(length(clust))
@@ -758,7 +757,7 @@ LKC <- pitches |>
 sv_R <- dat |>
   filter(pitch_type == "SV",
          p_throws == "R") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate) |>
+  select(release_speed, horz, vert, release_spin_rate) |>
   scale()
 
 sse_sv_R <- numeric(length(clust))
@@ -799,7 +798,7 @@ RSV <- pitches |>
 sv_L <- dat |>
   filter(pitch_type == "SV",
          p_throws == "L") |>
-  select(release_speed, pfx_x, pfx_z, release_spin_rate) |>
+  select(release_speed, horz, vert, release_spin_rate) |>
   scale()
 
 sse_sv_L <- numeric(length(clust))
@@ -843,27 +842,6 @@ clust_viz <- data.frame(pitch, handed, clusters)
 
 clust_viz |>
   ggplot(
-    aes(x=pitch, y=clusters, fill=handed) 
-  ) +  
-  geom_text(
-    aes(label=clusters), 
-    position=position_dodge(width=0.9), 
-    vjust=-0.5  # Adjust the vertical position of the labels
-  ) + 
-  geom_col(position="dodge") +
-  labs(
-    title = "Clusters by Pitch Type and Handedness",
-    x = "Primary Pitch Type",
-    y = "Number of Clusters",
-    fill = "Pitcher"
-  ) +
-  theme_minimal() + 
-  theme(
-    axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)
-  )
-
-clust_viz |>
-  ggplot(
     aes(x=pitch, y=clusters, fill=handed)
   ) + 
   geom_col(position="dodge") + 
@@ -886,8 +864,51 @@ clust_viz |>
 
 # Cluster center physical characteristics
 
-attr(ff_R, "scaled:center")
-attr(ff_R, "scaled:scale")
+## 4-seam
+
+RFF_C <- cbind(data.frame("Subtype" = paste0("FF", 1:6)), rep(attr(ff_R, "scaled:scale"), each=6) * ff_R_clust + rep(attr(ff_R, "scaled:center"), each=6))
+LFF_C <- cbind(data.frame("Subtype" = paste0("FF", 1:5)), rep(attr(ff_L, "scaled:scale"), each=5) * ff_L_clust + rep(attr(ff_L, "scaled:center"), each=5))
+
+## Changeup
+
+RCH_C <- cbind(data.frame("Subtype" = paste0("CH", 1:6)), rep(attr(ch_R, "scaled:scale"), each=6) * ch_R_clust + rep(attr(ch_R, "scaled:center"), each=6))
+LCH_C <- cbind(data.frame("Subtype" = paste0("CH", 1:5)), rep(attr(ch_L, "scaled:scale"), each=5) * ch_L_clust + rep(attr(ch_L, "scaled:center"), each=5))
+
+## Curveball
+
+RCU_C <- cbind(data.frame("Subtype" = paste0("CU", 1:5)), rep(attr(cu_R, "scaled:scale"), each=5) * cu_R_clust + rep(attr(cu_R, "scaled:center"), each=5))
+LCU_C <- cbind(data.frame("Subtype" = paste0("CU", 1:6)), rep(attr(cu_L, "scaled:scale"), each=6) * cu_L_clust + rep(attr(cu_L, "scaled:center"), each=6))
+
+## Cutter
+
+RFC_C <- cbind(data.frame("Subtype" = paste0("FC", 1:5)), rep(attr(fc_R, "scaled:scale"), each=5) * fc_R_clust + rep(attr(fc_R, "scaled:center"), each=5))
+LFC_C <- cbind(data.frame("Subtype" = paste0("FC", 1:5)), rep(attr(fc_L, "scaled:scale"), each=5) * fc_L_clust + rep(attr(fc_L, "scaled:center"), each=5))
+
+## Knuckle-Curve
+
+RKC_C <- cbind(data.frame("Subtype" = paste0("KC", 1:5)), rep(attr(kc_R, "scaled:scale"), each=5) * kc_R_clust + rep(attr(kc_R, "scaled:center"), each=5))
+LKC_C <- cbind(data.frame("Subtype" = paste0("KC", 1:4)), rep(attr(kc_L, "scaled:scale"), each=4) * kc_L_clust + rep(attr(kc_L, "scaled:center"), each=4))
+
+## Sinker
+
+RSI_C <- cbind(data.frame("Subtype" = paste0("SI", 1:5)), rep(attr(si_R, "scaled:scale"), each=5) * si_R_clust + rep(attr(si_R, "scaled:center"), each=5))
+LSI_C <- cbind(data.frame("Subtype" = paste0("SI", 1:5)), rep(attr(si_L, "scaled:scale"), each=5) * si_L_clust + rep(attr(si_L, "scaled:center"), each=5))
+
+## Slider
+
+RSL_C <- cbind(data.frame("Subtype" = paste0("SL", 1:6)), rep(attr(sl_R, "scaled:scale"), each=6) * sl_R_clust + rep(attr(sl_R, "scaled:center"), each=6))
+LSL_C <- cbind(data.frame("Subtype" = paste0("SL", 1:5)), rep(attr(sl_L, "scaled:scale"), each=5) * sl_L_clust + rep(attr(sl_L, "scaled:center"), each=5))
+
+## Splitter
+
+RFS_C <- cbind(data.frame("Subtype" = paste0("FS", 1:4)), rep(attr(fs_R, "scaled:scale"), each=4) * fs_R_clust + rep(attr(fs_R, "scaled:center"), each=4))
+
+## Sweeper
+
+RST_C <- cbind(data.frame("Subtype" = paste0("ST", 1:5)), rep(attr(st_R, "scaled:scale"), each=5) * st_R_clust + rep(attr(st_R, "scaled:center"), each=5))
+LKC_C <- cbind(data.frame("Subtype" = paste0("ST", 1:4)), rep(attr(st_L, "scaled:scale"), each=4) * st_L_clust + rep(attr(st_L, "scaled:center"), each=4))
+
+
 
 ### Sequencing ###
 
@@ -916,13 +937,18 @@ dat3 <- dat2 |>
          prev_subtype = lag(pitch_subtype)) |>
   ungroup()
   
-# 
+# Using p3 from the other R script, merge on the probability of an out before the pitch based on the count
+
+pre_pitch_prob <- p3 |>
+  select(balls, strikes, percent_out) |>
+  rename(pre_prob = percent_out)
+
+dat4 <- dat3 |>
+  left_join(pre_pitch_prob, by = c("balls", "strikes"))
+
+#
+
+
 
 hits <- c("double", "home_run", "single", "triple")
 outs <- c("double_play", "field_out", "fielders_choice", "fielders_choice_out", "force_out", "grounded_into_double_play", "strikeout", "strikeout_double_play", "triple_play", "sac_bunt_double_play", "sac_fly_double_play", "sac_bunt", "sac_fly")
-
-
-dat3 |>
-  mutate(
-    
-  )

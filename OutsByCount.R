@@ -1,5 +1,4 @@
 library(tidyverse)
-library(readr)
 
 pitches <- read_csv("savant_pitch_level.csv")
 
@@ -70,21 +69,16 @@ p3 |>
   geom_point() +
   labs(
     title = "Pitcher-caused Out Percentage by Count",
-    x = "Balls",
+    x = "Strikes",
     y = "Percent of PAs ending in an out",
-    color = "Strikes"
+    color = "Balls"
   ) +
   theme_minimal()
-
-out_value <- c(-0.057, 0.051, -0.112, 0.068, -0.032, 0.069, -0.084, 0.081, -0.196, 0.102, -0.063, 0.232, -0.164, 0.295,)
-balls <- c(0,0,1,1,0,0,1,1,2,2,1,1,2,2,3,3)
-strikes <- c(0,0,0,0,1,1,1,1,1,1,2,2,2,2,2,2)
-post_balls <- c(1,0,2,1,1,2,1,3,2,2,1,3,2)
-post_strikes <- C(0,1,0,1,1,1,2,1,2,2,3,2,3)
   
 
-strikeout <- data.frame(balls = c(0:3), strikes = 3, percent_out = 1)
+# Building a out-value table to merge on for the pitches
 
+strikeout <- data.frame(balls = c(0:3), strikes = 3, percent_out = 1)
 walk <- data.frame(balls = 4, strikes = 0:2, percent_out = 0)
 
 p4 <- p3 |>
@@ -108,5 +102,3 @@ out_values <- cross_join(p4,p4) |>
   mutate(out_value = post_prob - pre_prob)
 
 view(out_values)
-
-
