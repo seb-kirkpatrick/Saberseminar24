@@ -45,7 +45,7 @@ p3 <- p2 |>
          strikes<3,
   ) # After double checking, the 8 cases where the pre-pitch count had 3 strikes or 4 balls are not data errors, but umpire errors (I think)
 
-p3
+save(p3, file="TopSecret2.rda")
 
 # At 0-0, we start at a .676 probability of an out
 

@@ -1,6 +1,7 @@
 #library(baseballr)
 library(tidyverse)
 library(cluster)
+library(lme4)
 
 pitches <- read_csv("savant_pitch_level.csv")
 
@@ -987,6 +988,32 @@ dat6 <- dat5 |>
   filter(
     !events %in% c("field_error","catcher_interf","caught_stealing_2b","caught_stealing_3b","caught_stealing_home","pickoff_1b","pickoff_2b","pickoff_3b","pickoff_caught_stealing_2b","sac_bunt", "sac_fly","sac_fly_double_play","other_out"),
     !description %in% c("bunt_foul_tip","foul_bunt","missed_bunt")) |>
-  mutate(out_value = post_prob - pre_prob)
-  
+  mutate(out_value = post_prob - pre_prob,
+         pitch_subtype = as.factor(pitch_subtype),
+         prev_subtype = as.factor(prev_subtype),
+         pitcher = as.factor(pitcher)
+         )
 
+save(dat6, file="TopSecret.rda")
+
+dat6 |>
+  group_by(prev_type, pitch_type) |>
+  summarize(mean_out_value = mean(out_value, na.rm = T),
+            sd_dev = sd(out_value, na.rm=T),
+            count = n()) |>
+  filter(count > 500,
+         !is.na(prev_type)) |>
+  arrange(mean_out_value)
+
+
+
+
+mod1 <- lmer(out_value ~  0 + pitch_subtype + prev_subtype + prev_subtype*pitch_subtype + (1|pitcher) + (1|batter), data=dat6)
+
+summary(mod1)
+
+RHP <- dat6 |>
+  filter(p_throws == "R")
+
+LHP <- dat6 |>
+  filter(p_throws == "L")
