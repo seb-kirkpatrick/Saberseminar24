@@ -991,8 +991,16 @@ dat6 <- dat5 |>
   mutate(out_value = post_prob - pre_prob,
          pitch_subtype = as.factor(pitch_subtype),
          prev_subtype = as.factor(prev_subtype),
-         pitcher = as.factor(pitcher)
-         )
+         pitcher = as.factor(pitcher),
+         batter= as.factor(batter),
+         pitch_type = as.factor(pitch_type),
+         prev_type = as.factor(prev_type)
+         ) |>
+  mutate(pitch_type = relevel(pitch_type, ref= ),
+    prev_type = relevel(prev_type, ref= ),
+    pitch_subtype = relevel(pitch_subtype, ref= ),
+    prev_subtype = relevel(pitch_subtype, ref= )
+  )
 
 save(dat6, file="TopSecret.rda")
 
@@ -1005,15 +1013,32 @@ dat6 |>
          !is.na(prev_type)) |>
   arrange(mean_out_value)
 
-
-
-
-mod1 <- lmer(out_value ~  0 + pitch_subtype + prev_subtype + prev_subtype*pitch_subtype + (1|pitcher) + (1|batter), data=dat6)
+mod1 <- lmer(out_value ~  pitch_subtype + prev_subtype + (1|pitcher) + (1|batter), data=dat6)
 
 summary(mod1)
 
 RHP <- dat6 |>
   filter(p_throws == "R")
 
+RHP |>
+  group_by(pitch_subtype) |>
+  summarize(mean_out_value = mean(out_value, na.rm=T)) |>
+  arrange(mean_out_value)
+
+r_mod1 <- lmer(out_value ~  pitch_subtype + prev_subtype + (1|pitcher) + (1|batter), data=RHP)
+
+summary(r_mod1)
+
 LHP <- dat6 |>
   filter(p_throws == "L")
+
+LHP |>
+  group_by(pitch_subtype) |>
+  summarize(mean_out_value = mean(out_value, na.rm=T)) |>
+  arrange(mean_out_value)
+
+l_mod1 <- lmer(out_value ~  pitch_subtype + prev_subtype + (1|pitcher) + (1|batter), data=LHP)
+
+summary(l_mod1)
+
+mod2 <- lmer(out_value ~  pitch_subtype + prev_subtype + pitch_subtype*prev_subtype + (1|pitcher) + (1|batter), data=RHP)
