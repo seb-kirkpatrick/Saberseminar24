@@ -1013,9 +1013,7 @@ dat6 |>
          !is.na(prev_type)) |>
   arrange(mean_out_value)
 
-mod1 <- lmer(out_value ~  pitch_subtype + prev_subtype + (1|pitcher) + (1|batter), data=dat6)
-
-summary(mod1)
+load("~/Saberseminar24/TopSecret.rda")
 
 RHP <- dat6 |>
   filter(p_throws == "R")
@@ -1029,16 +1027,21 @@ r_mod1 <- lmer(out_value ~  pitch_subtype + prev_subtype + (1|pitcher) + (1|batt
 
 summary(r_mod1)
 
+r_mod2 <- lmer(out_value ~  pitch_type + prev_type + (1|pitcher) + (1|batter), data=RHP)
+
+summary(r_mod2)
+
+r_mod3 <- lmer(out_value ~  pitch_type + prev_type + pitch_type*prev_type + (1|pitcher) + (1|batter), data=RHP)
+
+summary(r_mod3)
+
+
+
+
+
+
+
+
+
 LHP <- dat6 |>
   filter(p_throws == "L")
-
-LHP |>
-  group_by(pitch_subtype) |>
-  summarize(mean_out_value = mean(out_value, na.rm=T)) |>
-  arrange(mean_out_value)
-
-l_mod1 <- lmer(out_value ~  pitch_subtype + prev_subtype + (1|pitcher) + (1|batter), data=LHP)
-
-summary(l_mod1)
-
-mod2 <- lmer(out_value ~  pitch_subtype + prev_subtype + pitch_subtype*prev_subtype + (1|pitcher) + (1|batter), data=RHP)
