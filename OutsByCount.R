@@ -19,7 +19,7 @@ p1 <- left_join(pitches, abid, by = c("game_pk", "at_bat_number"))
 outcome <- p1 |>
   group_by(at_bat_id) |>
   slice_max(order_by = pitch_number, n = 1) |> # Any blanks left are either intentional walks or a runner being caught stealing to end the inning, neither of which are batter-induced outs
-  select(at_bat_id, ending_event = events)
+  dplyr::select(at_bat_id, ending_event = events)
 
 table(outcome$ending_event)
 
@@ -45,7 +45,7 @@ p3 <- p2 |>
          strikes<3,
   ) # After double checking, the 8 cases where the pre-pitch count had 3 strikes or 4 balls are not data errors, but umpire errors (I think)
 
-save(p3, file="TopSecret2.rda")
+save(p3, file="CountOutValue.rda")
 
 # At 0-0, we start at a .676 probability of an out
 
@@ -82,7 +82,7 @@ strikeout <- data.frame(balls = c(0:3), strikes = 3, percent_out = 1)
 walk <- data.frame(balls = 4, strikes = 0:2, percent_out = 0)
 
 p4 <- p3 |>
-  select(1,2,5) |>
+  dplyr::select(1,2,5) |>
   rbind(strikeout, walk)
 
 p4
