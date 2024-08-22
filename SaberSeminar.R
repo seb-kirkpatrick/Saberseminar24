@@ -4,6 +4,7 @@ library(cluster)
 library(lme4)
 library(merTools)
 
+
 pitches <- read_csv("savant_pitch_level.csv")
 
 #view(head(pitches))
@@ -740,9 +741,13 @@ for (i in clust) {
   sse_kc_L[i] <- k_means$tot.withinss
 }
 
+par(mar = c(6, 7, 5, 2))
 plot(1:20, sse_kc_L, type="b",
-     xlab = "Number of Clusters",
-     yla = "Within groups sum of squares")
+     xlab = "",
+     ylab = "")
+mtext("Number of Clusters", side = 1, line =4, cex = 3)
+mtext("Within groups sum of squares", side = 2, line = 4, cex = 3)
+title(main = "Elbow Plot for LHP KC", line = 2, cex.main = 4)
 
 # 3
 
@@ -859,19 +864,20 @@ clust_viz |>
   geom_text(
     aes(label=clusters), 
     position=position_dodge(width=0.9), 
-    vjust=-0.5
+    vjust=-0.5,
+    size = 10
   ) + 
   labs(
-    title = "Clusters by Pitch Type and Handedness",
+    title = "Pitch Subtypes Identified by K-Means",
     x = "Primary Pitch Type",
     y = "Number of Clusters",
     fill = "Pitcher"
   ) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
   theme_minimal() +
-  theme(
-    axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)
-  ) +
-  facet_wrap(~handed)
+  facet_wrap(~handed) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),text = element_text(size = rel(5)), legend.text = element_text(size = rel(3)),legend.position = "bottom",legend.key.width = unit(0.6,"in"), strip.text = element_text(size = rel(5)), plot.title = element_text(size = rel(9.5), hjust = 0.5), axis.title.x = element_text(margin = margin(t = 25)), axis.title.y = element_text(margin = margin(r = 25, l=10)))
+  
 
 # Cluster center physical characteristics
 
@@ -949,6 +955,8 @@ dat3 <- dat2 |>
   ungroup()
   
 # Using p3 from the other R script, merge on the probability of an out before the pitch based on the count
+
+load("~/Saberseminar24/CountOutValue.rda")
 
 pre_pitch_prob <- p3 |>
   dplyr::select(balls, strikes, percent_out) |>
@@ -1039,7 +1047,7 @@ dat6 |>
 
 
 
-### Start model building for RHP 
+#### Start model building for RHP 
 
 RHP <- dat6 |>
   filter(p_throws == "R")
@@ -1061,7 +1069,7 @@ RHP |>
 
 # Initial model with just primary types
 
-r_mod1 <- lmer(out_value ~  pitch_type + prev_type + pitch_type*prev_type + stand + on_base + count_impact + (1|pitcher) + (1|batter) + (1|home_team) + (1|fielder_2) + (1|game_pk), data=RHP)
+r_mod1 <- lmer(out_value ~  pitch_type + prev_type + pitch_type*prev_type + stand + on_base + count_impact + (1|pitcher) + (1|batter) + (1|home_team) + (1|fielder_2), data=RHP)
 
 summary(r_mod1)
 
@@ -1070,11 +1078,11 @@ summary(r_mod1)
 
 pitch_types <- c("FF", "CH", "CU", "FS", "KC", "SI", "SL", "FC", "ST")
 
-r_newdata <- data.frame(crossing(prev_type = pitch_types, pitch_type = pitch_types, stand=c("R", "L"), on_base = F, count_impact = "even", batter = "", pitcher = "", home_team = "", game_pk = "", fielder_2 = ""))
+r_newdata <- data.frame(crossing(prev_type = pitch_types, pitch_type = pitch_types, stand=c("R", "L"), on_base = F, count_impact = "even", batter = "", pitcher = "", home_team = "", fielder_2 = ""))
 #This is assuming a 0-0 count with no one on base for the sake of predicted value
 
 res <- predictInterval(merMod = r_mod1, newdata=r_newdata, 
-                level = 0.8, n.sims = 1000, stat = "mean",
+                level = 0.8, n.sims = 10000, stat = "mean",
                 type = "linear.prediction", which = "fixed",
                 include.resid.var = F)
 
@@ -1085,20 +1093,38 @@ r_pred_mod1 |>
   mutate(fit_sig = 
     ifelse(lwr < 0  & upr > 0, 0, fit)
   ) |>
-  ggplot(aes(x=prev_type, y=pitch_type, fill = fit_sig)
+  ggplot(aes(x=pitch_type, y=prev_type, fill = fit_sig)
          ) +
-  geom_tile(color="black") +
-  scale_fill_gradient2(low = "red", high = "darkgreen", limits = c(-0.04, 0.04))
+  geom_tile(color="grey90") +
+  scale_fill_gradient2(low = "red", high = "darkgreen", limits = c(-0.045, 0.045), breaks = c(-0.04, -0.02, 0, 0.02, 0.04)) +
+  theme_minimal() +
+  coord_equal() +
+  labs(
+    title = "RHP Pitch Type Permutations versus RHB",
+    x = "Pitch Type",
+    y = "Previous Pitch Type",
+    fill = "Predicted Out-Value    "
+  ) +
+  theme(text = element_text(size = rel(5)), legend.text = element_text(size = rel(3)),legend.position = "bottom",legend.key.width = unit(0.6,"in"), strip.text = element_text(margin = margin(b=10)), plot.title = element_text(size = rel(9.5), hjust = 0.5), axis.title.x = element_text(margin = margin(t = 25)), axis.title.y = element_text(margin = margin(r = 25, l=10)))
 
 r_pred_mod1 |>
   filter(stand == "L") |>
   mutate(fit_sig = 
            ifelse(lwr < 0  & upr > 0, 0, fit)
   ) |>
-  ggplot(aes(x=prev_type, y=pitch_type, fill = fit_sig)
+  ggplot(aes(x=pitch_type, y=prev_type, fill = fit_sig)
   ) +
-  geom_tile(color="black") +
-  scale_fill_gradient2(low = "red", high = "darkgreen", limits = c(-0.04, 0.04))
+  geom_tile(color="grey90") +
+  scale_fill_gradient2(low = "red", high = "darkgreen", limits = c(-0.045, 0.045), breaks = c(-0.04, -0.02, 0, 0.02, 0.04)) +
+  theme_minimal() +
+  coord_equal() +
+  labs(
+    title = "RHP Pitch Type Permutations versus LHB",
+    x = "Pitch Type",
+    y = "Previous Pitch Type",
+    fill = "Predicted Out-Value    "
+  ) +
+  theme(text = element_text(size = rel(5)), legend.text = element_text(size = rel(3)),legend.position = "bottom",legend.key.width = unit(0.6,"in"), strip.text = element_text(margin = margin(b=10)), plot.title = element_text(size = rel(9.5), hjust = 0.5), axis.title.x = element_text(margin = margin(t = 25)), axis.title.y = element_text(margin = margin(r = 25, l=10)))
 
 # Now going to make a higher level to ensure which combinations are successful
 
@@ -1135,17 +1161,18 @@ ff_fc <- dat6 |>
     pitch_subtype = relevel(pitch_subtype, ref = "FC1")
   )
 
-r_mod2 <- lmer(out_value ~ pitch_subtype + prev_subtype + pitch_subtype*prev_subtype + stand + on_base + count_impact + (1|pitcher) + (1|batter) + (1|home_team) + (1|fielder_2) + (1|game_pk), data=cu_sl)
+r_mod2 <- lmer(out_value ~ pitch_subtype + prev_subtype + pitch_subtype*prev_subtype + stand + on_base + count_impact + (1|home_team), data=ff_fc)
 
 summary(r_mod2)
 
 ff <- c("FF1", "FF2", "FF3", "FF4", "FF5")
 fc <- c("FC1", "FC2", "FC3", "FC4")
 
-ff_fc_r_newdata <- crossing(prev_subtype = ff, pitch_subtype = fc, stand="R", on_base = F, count_impact = "even", batter = "", pitcher = "", home_team = "", game_pk = "", fielder_2 = "")
+ff_fc_r_newdata <- crossing(prev_subtype = ff, pitch_subtype = fc, stand="R", on_base = F, count_impact = "even", batter = "", pitcher = "", home_team = "", fielder_2 = "")
 
-ff_fc_res <- predictInterval(merMod = r_mod2, newdata = ff_fc_r_newdata, 
-                       level = 0.8, n.sims = 1000, stat = "mean",
+
+ff_fc_res <- predictInterval(merMod = r_mod2, newdata = ff_fc_r_newdata, seed = 740,
+                       level = 0.8, n.sims = 10000, stat = "mean",
                        type = "linear.prediction", which = "fixed",
                        include.resid.var = F)
 
@@ -1157,10 +1184,18 @@ ff_fc_r_pred_mod2 |>
   ) |>
   ggplot(aes(x=prev_subtype, y=pitch_subtype, fill = fit_sig)
   ) +
-  geom_tile(color="black") +
+  geom_tile(color="grey90") +
   geom_text(aes(label = fit_sig), color= "black", size = 5) +
-  scale_fill_gradient2(low = "red", high = "darkgreen", limits = c(-0.04, 0.04))
-  
+  scale_fill_gradient2(low = "red", high = "darkgreen", limits = c(-0.04, 0.04)) +
+  theme_minimal() +
+  coord_equal() +
+  labs(
+    x = "Pitch Type",
+    y = "Previous Pitch Type",
+    fill = "Predicted Out-Value"
+  ) +
+  theme(text = element_text(size = rel(5)), legend.text = element_text(size = rel(3)),legend.position = "bottom",legend.key.width = unit(0.4,"in"), , axis.title.x = element_text(margin = margin(t = 25)), axis.title.y = element_text(margin = margin(r = 25, l=10)))
+
 dat6 |>
   filter(p_throws == "R",
     pitch_subtype == "FC3" & prev_subtype == "FF5") |>
@@ -1174,13 +1209,288 @@ dat6 |>
   summarize(
     p_ff5 = round(sum(pitch_subtype == "FF5") / sum(pitch_type == "FF"), 2),
     p_fc3 = round(sum(pitch_subtype == "FC3") / sum(pitch_type == "FC"), 2)) |>
-  filter(p_ff5 > .33 & p_fc3 > .33)
+  filter(p_ff5 > .25 & p_fc3 > .25)
 
 # Kodai Senga, Dustin May, Grayson Rodriguez, and Yu Darvish (much better than Lance Lynn)
 
 
 
-
+#### Left-Handed Pitchers
 
 LHP <- dat6 |>
-  filter(p_throws == "L")
+  filter(p_throws == "L") |>
+  mutate(prev_type = droplevels(prev_type),
+         pitch_type = droplevels(pitch_type))
+
+l_mod1 <- lmer(out_value ~  pitch_type + prev_type + pitch_type*prev_type + stand + on_base + count_impact + (1|pitcher) + (1|batter) + (1|home_team) + (1|fielder_2), data=LHP)
+
+summary(l_mod1)
+
+pitch_types <- c("FF", "CH", "CU", "KC", "SI", "SL", "FC", "ST")
+
+l_newdata <- data.frame(crossing(prev_type = pitch_types, pitch_type = pitch_types, stand=c("R", "L"), on_base = F, count_impact = "even", batter = "", pitcher = "", home_team = "", fielder_2 = ""))
+
+res <- predictInterval(merMod = l_mod1, newdata=l_newdata, 
+                       level = 0.8, n.sims = 10000, stat = "mean",
+                       type = "linear.prediction", which = "fixed",
+                       include.resid.var = F)
+
+l_pred_mod1 <- cbind(l_newdata, res)
+
+l_pred_mod1 |>
+  filter(stand == "R") |>
+  mutate(fit_sig = 
+           ifelse(lwr < 0  & upr > 0, 0, fit)
+  ) |>
+  ggplot(aes(x=pitch_type, y=prev_type, fill = fit_sig)
+  ) +
+  geom_tile(color="grey90") +
+  scale_fill_gradient2(low = "red", high = "darkgreen", limits = c(-0.045, 0.045), breaks = c(-0.04, -0.02, 0, 0.02, 0.04)) +
+  theme_minimal() +
+  coord_equal() +
+  labs(
+    title = "LHP Pitch Type Permutations versus RHB",
+    x = "Pitch Type",
+    y = "Previous Pitch Type",
+    fill = "Predicted Out-Value    "
+  ) +
+  theme(text = element_text(size = rel(5)), legend.text = element_text(size = rel(3)),legend.position = "bottom",legend.key.width = unit(0.6,"in"), strip.text = element_text(margin = margin(b=10)), plot.title = element_text(size = rel(9.5), hjust = 0.5), axis.title.x = element_text(margin = margin(t = 25)), axis.title.y = element_text(margin = margin(r = 25, l=10)))
+
+l_pred_mod1 |>
+  filter(stand == "L") |>
+  mutate(fit_sig = 
+           ifelse(lwr < 0  & upr > 0, 0, fit)
+  ) |>
+  ggplot(aes(x=pitch_type, y=prev_type, fill = fit_sig)
+  ) +
+  geom_tile(color="grey90") +
+  scale_fill_gradient2(low = "red", high = "darkgreen", limits = c(-0.045, 0.045), breaks = c(-0.04, -0.02, 0, 0.02, 0.04)) +
+  theme_minimal() +
+  coord_equal() +
+  labs(
+    title = "LHP Pitch Type Permutations versus LHB",
+    x = "Pitch Type",
+    y = "Previous Pitch Type",
+    fill = "Predicted Out-Value    "
+  ) +
+  theme(text = element_text(size = rel(5)), legend.text = element_text(size = rel(3)),legend.position = "bottom",legend.key.width = unit(0.6,"in"), strip.text = element_text(margin = margin(b=10)), plot.title = element_text(size = rel(9.5), hjust = 0.5), axis.title.x = element_text(margin = margin(t = 25)), axis.title.y = element_text(margin = margin(r = 25, l=10)))
+
+
+res2 <- predictInterval(merMod = l_mod1, newdata=l_newdata, seed = 740,
+                        level = 0.995, n.sims = 10000, stat = "mean",
+                        type = "linear.prediction", which = "fixed",
+                        include.resid.var = F)
+
+l_pred2_mod1 <- cbind(l_newdata, res2)
+
+l_pred2_mod1 |>
+  filter(lwr>0 & upr > 0)
+
+
+dat6 |>
+  filter(p_throws == "L",
+         prev_type == "SL",
+         pitch_type == "SL") |>
+  group_by(prev_subtype, pitch_subtype) |>
+  summarize(mean_out_value = mean(out_value),
+            count = n())|>
+  arrange(-count)
+
+# Filter the data down to curveball setting up slider and find the worst performing subtype to make the baseline
+
+sl_sl <- dat6 |>
+  filter(p_throws == "L",
+         prev_type == "SL" & pitch_type == "SL") |>
+  mutate(
+    prev_subtype = relevel(prev_subtype, ref = "SL1"),
+    pitch_subtype = relevel(pitch_subtype, ref = "SL1")
+  )
+
+l_mod2 <- lmer(out_value ~ pitch_subtype + prev_subtype + pitch_subtype*prev_subtype + stand + on_base + count_impact + (1|home_team), data=sl_sl)
+
+summary(l_mod2)
+
+sl <- c("SL1", "SL2", "SL3", "SL4", "SL5")
+
+sl_sl_l_newdata <- crossing(prev_subtype = sl, pitch_subtype = sl, stand=c("R","L"), on_base = F, count_impact = "even", batter = "", pitcher = "", home_team = "", fielder_2 = "")
+
+
+sl_sl_res <- predictInterval(merMod = l_mod2, newdata = sl_sl_l_newdata, seed = 740,
+                             level = 0.8, n.sims = 10000, stat = "mean",
+                             type = "linear.prediction", which = "fixed",
+                             include.resid.var = F)
+
+sl_sl_l_pred_mod2 <- cbind(sl_sl_l_newdata, sl_sl_res)
+
+sl_sl_l_pred_mod2 |>
+  mutate(fit_sig = 
+           round(ifelse(lwr < 0  & upr > 0, 0, fit), 2),
+         batter = paste0(stand,"HB")
+  ) |>
+  ggplot(aes(x=prev_subtype, y=pitch_subtype, fill = fit_sig)
+  ) +
+  geom_tile(color="grey90") +
+  geom_text(aes(label = fit_sig), color= "black", size = 5) +
+  scale_fill_gradient2(low = "red", high = "darkgreen", limits = c(-0.33, 0.33), breaks = c(-.3, -.2, -.1, 0, .1, .2, .3)) +
+  theme_minimal() +
+  coord_equal() +
+  labs(
+    title = "LHP Performance of Slider-Slider Combination",
+    x = "Pitch Type",
+    y = "Previous Pitch Type",
+    fill = "Predicted Out-Value   "   
+  ) +
+  facet_wrap(~batter) +
+  theme(text = element_text(size = rel(5)), legend.text = element_text(size = rel(3)),legend.position = "bottom",legend.key.width = unit(0.6,"in"), strip.text = element_text(size = rel(5)), plot.title = element_text(size = rel(9.5), hjust = 0.5), , axis.title.x = element_text(margin = margin(t = 25)), axis.title.y = element_text(margin = margin(r = 25, l=10)))
+  
+
+dat6 |>
+  filter(p_throws == "L",
+         pitch_subtype == "SL4" & prev_subtype == "SL1") |>
+  group_by(player_name) |>
+  summarize(count = n()) |>
+  arrange(-count)
+
+dat6 |>
+  filter(p_throws == "L") |>
+  group_by(player_name) |>
+  summarize(
+    p_sl1 = round(sum(pitch_subtype == "SL1") / sum(pitch_type == "SL"), 2),
+    p_sl4 = round(sum(pitch_subtype == "SL4") / sum(pitch_type == "SL"), 2)) |>
+  filter(p_sl1 > 0.25 & p_sl4 > 0.25)
+
+# Clayton Kershaw, Yusei Kikuchi, Patrick Sandoval, Jose Suarez
+
+dat6 |>
+  filter(p_throws == "L",
+         pitch_subtype == "SL4" & prev_subtype == "SL2") |>
+  group_by(player_name) |>
+  summarize(count = n()) |>
+  arrange(-count)
+
+dat6 |>
+  filter(p_throws == "L") |>
+  group_by(player_name) |>
+  summarize(
+    p_sl1 = round(sum(pitch_subtype == "SL2") / sum(pitch_type == "SL"), 2),
+    p_sl4 = round(sum(pitch_subtype == "SL4") / sum(pitch_type == "SL"), 2)) |>
+  filter(p_sl1 > 0.25 & p_sl4 > 0.25)
+
+# Ranger Suarez
+
+dat6 |>
+  filter(p_throws == "L",
+         pitch_subtype == "SL3" & prev_subtype == "SL5") |>
+  group_by(player_name) |>
+  summarize(count = n()) |>
+  arrange(-count)
+
+dat6 |>
+  filter(p_throws == "L") |>
+  group_by(player_name) |>
+  summarize(
+    p_sl5 = round(sum(pitch_subtype == "SL5") / sum(pitch_type == "SL"), 2),
+    p_sl3 = round(sum(pitch_subtype == "SL3") / sum(pitch_type == "SL"), 2)) |>
+  filter(p_sl5 > 0.25 & p_sl3 > 0.25)
+
+# Andrew Heaney
+
+
+
+
+# Cluster Viz
+
+dat_clusts_r <- dat6 |>
+  filter(p_throws == "R") |>
+  group_by(pitch_subtype) |> 
+  summarize(
+    release_speed = mean(release_speed),
+    vert = mean(pfx_z) * 12,
+    horz = mean(pfx_x) * 12
+  ) |>
+  ungroup() |>
+  mutate(pitch_type = substr(pitch_subtype,1,2)) 
+
+dat_clusts_r |>
+  mutate(point_size = scales::rescale(release_speed, to = c(6,20), from = range(dat_clusts_r$release_speed))) |> 
+  ggplot(aes(x = horz, y = vert, color = release_speed, size = point_size)) +
+  geom_point(alpha = 0.8) +
+  facet_wrap(~pitch_type) +
+  scale_color_gradient2(low = "gray", mid = "yellow", high = "red", midpoint = 82, limits = c(67,97), breaks=c(70,75,80,85,90,95)) +
+  scale_size_identity() +
+  scale_x_continuous(breaks = seq(-20, 20, by = 10), limits = c(-25, 25)) +
+  scale_y_continuous(breaks = seq(-20, 20, by = 10), limits = c(-25, 25)) +
+  theme_bw() +
+  labs(title = "Physical Characteristics of RHP Pitch Subtypes",
+       x = "Horitzonal Break",
+       y = "Vertical Break",
+       color = "Release Speed    ") +
+  theme(text = element_text(size = rel(5)), legend.text = element_text(size = rel(3)),legend.position = "bottom",legend.key.width = unit(1,"in"), strip.text = element_text(size = rel(5)), plot.title = element_text(size = rel(9.5), hjust = 0.5), axis.title.x = element_text(margin = margin(t = 25)), axis.title.y = element_text(margin = margin(r = 25, l=10)))
+  
+dat_clusts_r |>
+  filter(pitch_type == "FF") |>
+  dplyr::select(1,2,3,4) |>
+  rename(
+    "Pitch Subtype" = pitch_subtype,
+    "Release Speed" = release_speed,
+    "Vertical Break" = vert,
+    "Horizontal Break" = horz
+  ) |>
+  kable()
+
+dat_clusts_r |>
+  filter(pitch_type == "FC") |>
+  dplyr::select(1,2,3,4) |>
+  rename(
+    "Pitch Subtype" = pitch_subtype,
+    "Release Speed" = release_speed,
+    "Vertical Break" = vert,
+    "Horizontal Break" = horz
+  ) |>
+  kable()
+
+
+
+dat_clusts_l <- dat6 |>
+  filter(p_throws == "L") |>
+  group_by(pitch_subtype) |> 
+  summarize(
+    release_speed = mean(release_speed),
+    vert = mean(pfx_z) * 12,
+    horz = mean(pfx_x) * 12
+  ) |>
+  ungroup() |>
+  mutate(pitch_type = substr(pitch_subtype,1,2),
+         point_size = scales::rescale(release_speed, to = c(6,20), from = range(dat_clusts_l$release_speed)))
+
+dummy <- data.frame(pitch_subtype = "FS1", release_speed = 0, vert = 0, horz = 0, pitch_type = "FS", point_size = 0)
+
+dat_clusts_l1 <- rbind(dat_clusts_l, dummy)
+
+dat_clusts_l1 |>
+  ggplot(aes(x = horz, y = vert, color = release_speed, size = point_size)) +
+  geom_point(alpha = 0.8) +
+  facet_wrap(~factor(pitch_type,levels = c("CH", "CU", "FC", 
+                                           "FF", "FS", "KC", 
+                                           "SI", "SL", "ST"))) +
+  scale_color_gradient2(low = "gray", mid = "yellow", high = "red", midpoint = 82, limits = c(67,97), breaks=c(70,75,80,85,90,95)) +
+  scale_size_identity() +
+  scale_x_continuous(breaks = seq(-20, 20, by = 10), limits = c(-25, 25)) +
+  scale_y_continuous(breaks = seq(-20, 20, by = 10), limits = c(-25, 25)) +
+  theme_bw() + labs(title = "Physical Characteristics of LHP Pitch Subtypes",
+                    x = "Horitzonal Break",
+                    y = "Vertical Break",
+                    color = "Release Speed    ") +
+  theme(text = element_text(size = rel(5)), legend.text = element_text(size = rel(3)),legend.position = "bottom",legend.key.width = unit(1,"in"), strip.text = element_text(size = rel(5)), plot.title = element_text(size = rel(9.5), hjust = 0.5), axis.title.x = element_text(margin = margin(t = 25)), axis.title.y = element_text(margin = margin(r = 25, l=10)))
+
+
+dat_clusts_l |>
+  filter(pitch_type == "SL") |>
+  dplyr::select(1,2,3,4) |>
+  rename(
+    "Pitch Subtype" = pitch_subtype,
+    "Release Speed" = release_speed,
+    "Vertical Break" = vert,
+    "Horizontal Break" = horz
+  ) |>
+  kable()

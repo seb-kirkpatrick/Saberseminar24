@@ -47,20 +47,23 @@ p3 <- p2 |>
 
 save(p3, file="CountOutValue.rda")
 
+load("~/Saberseminar24/CountOutValue.rda")
+
 # At 0-0, we start at a .676 probability of an out
 
 p3 |>
   ggplot(
     aes(x=balls, y=percent_out, color=as.factor(strikes))) +
-  geom_path() +
-  geom_point() +
+  geom_path(linewidth = 2) +
+  geom_point(size=5) +
   labs(
-    title = "Pitcher-caused Out Percentage by Count",
+    title = "Pitcher-Induced Out Percentage by Count",
     x = "Balls",
     y = "Percent of PAs ending in an out",
     color = "Strikes"
   ) +
-  theme_minimal()
+  theme_minimal() +
+  theme(text = element_text(size = rel(5)), legend.text = element_text(size = rel(3)),legend.key.height = unit(0.6,"in"), strip.text = element_text(margin = margin(b=10)), plot.title = element_text(size = rel(9.5), hjust = 0.5), axis.title.x = element_text(margin = margin(t = 25)), axis.title.y = element_text(margin = margin(r = 25, l=10)))
 
 p3 |>
   ggplot(
