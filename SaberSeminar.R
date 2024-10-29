@@ -3,7 +3,7 @@ library(tidyverse)
 library(cluster)
 library(lme4)
 library(merTools)
-
+library(gt)
 
 pitches <- read_csv("savant_pitch_level.csv")
 
@@ -31,7 +31,7 @@ qualified_pitchers <- pitches |>
 dat <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
          game_year == 2023) |>
-  dplyr::select(1, 15, 3, 24, 25, 50, 83) |>
+  dplyr::select(pitch_type,p_throws,release_speed,pfx_x,pfx_z,release_spin_rate,spin_axis) |>
   na.omit() |>
   mutate(horz = pfx_x * 12,
          vert = pfx_z * 12)
@@ -50,25 +50,28 @@ table(dat$pitch_type, dat$p_throws)
 ff_R <- dat |>
   filter(pitch_type == "FF",
          p_throws == "R") |>
-  dplyr::select(release_speed, horz, vert) |>
-  scale()
+  dplyr::select(release_speed, horz, vert, release_spin_rate) |>
+  scale() |>
+  as.data.frame()
+
+ff_R["Z1"] <- prcomp(ff_R)$x[,1]
+ff_R["Z2"] <- prcomp(ff_R)$x[,2]
 
 clust <- 1:20
 sse_ff_R <- numeric(length(clust))
 
+set.seed(740)
 for (i in clust) {
-  set.seed(740)
-  k_means <- kmeans(ff_R, centers=i, iter.max=300, algorithm="MacQueen")
+  k_means <- kmeans(ff_R[,c(1:4)], centers=i, iter.max = 200, algorithm = "Hartigan-Wong")
   sse_ff_R[i] <- k_means$tot.withinss
 }
 
 plot(1:20, sse_ff_R, type="b",
+     main = "RHP FF",
      xlab = "Number of Clusters",
-     yla = "Within groups sum of squares")
+     ylab = "Within groups sum of squares")
 
 # 5
-
-ff_R_clust <- as.data.frame(kmeans(ff_R, centers = 5)$centers)
 
 RFF <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
@@ -80,7 +83,7 @@ RFF <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(cluster = kmeans(ff_R, centers=5)$cluster,
+  mutate(cluster = kmeans(ff_R[,c(1:4)], centers=5, iter.max = 200, algorithm = "Hartigan-Wong")$cluster,
          pitch_subtype = paste0(pitch_type,cluster))
 
 
@@ -89,24 +92,27 @@ RFF <- pitches |>
 ff_L <- dat |>
   filter(pitch_type == "FF",
          p_throws == "L") |>
-  dplyr::select(release_speed, horz, vert) |>
-  scale()
+  dplyr::select(release_speed, horz, vert, release_spin_rate) |>
+  scale() |>
+  as.data.frame()
+
+ff_L["Z1"] <- prcomp(ff_L)$x[,1]
+ff_L["Z2"] <- prcomp(ff_L)$x[,2]
 
 sse_ff_L <- numeric(length(clust))
 
+set.seed(740)
 for (i in clust) {
-  set.seed(740)
-  k_means <- kmeans(ff_L, centers=i, iter.max=200, algorithm="MacQueen")
+  k_means <- kmeans(ff_L[,c(1:4)], centers=i, iter.max=200, algorithm="Hartigan-Wong")
   sse_ff_L[i] <- k_means$tot.withinss
 }
 
 plot(1:20, sse_ff_L, type="b",
+     main = "LHP FF",
      xlab = "Number of Clusters",
      yla = "Within groups sum of squares")
 
-# 6
-
-ff_L_clust <- as.data.frame(kmeans(ff_L, centers = 6)$centers)
+# 5
 
 LFF <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
@@ -118,7 +124,7 @@ LFF <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(cluster = kmeans(ff_L, centers=6)$cluster,
+  mutate(cluster = kmeans(ff_L[,c(1:4)], centers=5, iter.max=200, algorithm="Hartigan-Wong")$cluster,
          pitch_subtype = paste0(pitch_type,cluster))
 
 
@@ -128,24 +134,27 @@ LFF <- pitches |>
 sl_R <- dat |>
   filter(pitch_type == "SL",
          p_throws == "R") |>
-  dplyr::select(release_speed, horz, vert) |>
-  scale()
+  dplyr::select(release_speed, horz, vert, release_spin_rate) |>
+  scale() |>
+  as.data.frame()
+
+sl_R["Z1"] <- prcomp(sl_R)$x[,1]
+sl_R["Z2"] <- prcomp(sl_R)$x[,2]
 
 sse_sl_R <- numeric(length(clust))
 
+set.seed(740)
 for (i in clust) {
-  set.seed(740)
-  k_means <- kmeans(sl_R, centers=i, iter.max=200, algorithm="MacQueen")
+  k_means <- kmeans(sl_R[,c(1:4)], centers=i, iter.max=200, algorithm="Hartigan-Wong")
   sse_sl_R[i] <- k_means$tot.withinss
 }
 
 plot(1:20, sse_sl_R, type="b",
+     main = "RHP SL",
      xlab = "Number of Clusters",
      yla = "Within groups sum of squares")
 
 # 5
-
-sl_R_clust <- as.data.frame(kmeans(sl_R, centers = 5)$centers)
 
 RSL <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
@@ -157,7 +166,7 @@ RSL <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(cluster = kmeans(sl_R, centers=5)$cluster,
+  mutate(cluster = kmeans(sl_R[,c(1:4)], centers=5, iter.max=200, algorithm="Hartigan-Wong")$cluster,
          pitch_subtype = paste0(pitch_type,cluster))
 
 
@@ -167,24 +176,27 @@ RSL <- pitches |>
 sl_L <- dat |>
   filter(pitch_type == "SL",
          p_throws == "L") |>
-  dplyr::select(release_speed, horz, vert) |>
-  scale()
+  dplyr::select(release_speed, horz, vert, release_spin_rate) |>
+  scale() |>
+  as.data.frame()
+
+sl_L["Z1"] <- prcomp(sl_L)$x[,1]
+sl_L["Z2"] <- prcomp(sl_L)$x[,2]
 
 sse_sl_L <- numeric(length(clust))
 
+set.seed(740)
 for (i in clust) {
-  set.seed(740)
-  k_means <- kmeans(sl_L, centers=i, iter.max=200, algorithm="MacQueen")
+  k_means <- kmeans(sl_L[,c(1:4)], centers=i, iter.max=200, algorithm="Hartigan-Wong")
   sse_sl_L[i] <- k_means$tot.withinss
 }
 
 plot(1:20, sse_sl_L, type="b",
+     main = "LHP SL",
      xlab = "Number of Clusters",
      yla = "Within groups sum of squares")
 
 # 5
-
-sl_L_clust <- as.data.frame(kmeans(sl_L, centers = 5)$centers)
 
 LSL <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
@@ -196,7 +208,7 @@ LSL <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(cluster = kmeans(sl_L, centers=5)$cluster,
+  mutate(cluster = kmeans(sl_L[,c(1:4)], centers=5, iter.max=200, algorithm="Hartigan-Wong")$cluster,
          pitch_subtype = paste0(pitch_type,cluster))
 
 
@@ -206,24 +218,27 @@ LSL <- pitches |>
 si_R <- dat |>
   filter(pitch_type == "SI",
          p_throws == "R") |>
-  dplyr::select(release_speed, horz, vert) |>
-  scale()
+  dplyr::select(release_speed, horz, vert, release_spin_rate) |>
+  scale() |>
+  as.data.frame()
+
+si_R["Z1"] <- prcomp(si_R)$x[,1]
+si_R["Z2"] <- prcomp(si_R)$x[,2]
 
 sse_si_R <- numeric(length(clust))
 
+set.seed(740)
 for (i in clust) {
-  set.seed(740)
-  k_means <- kmeans(si_R, centers=i, iter.max=200, algorithm="MacQueen")
+  k_means <- kmeans(si_R[,c(1:4)], centers=i, iter.max=200, algorithm="Hartigan-Wong")
   sse_si_R[i] <- k_means$tot.withinss
 }
 
 plot(1:20, sse_si_R, type="b",
+     main = "RHP SI",
      xlab = "Number of Clusters",
      yla = "Within groups sum of squares")
 
 # 5
-
-si_R_clust <- as.data.frame(kmeans(si_R, centers = 5)$centers)
 
 RSI <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
@@ -235,7 +250,7 @@ RSI <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(cluster = kmeans(si_R, centers=5)$cluster,
+  mutate(cluster = kmeans(si_R[,c(1:4)], centers=5, iter.max=200, algorithm="Hartigan-Wong")$cluster,
          pitch_subtype = paste0(pitch_type,cluster))
 
 
@@ -245,24 +260,27 @@ RSI <- pitches |>
 si_L <- dat |>
   filter(pitch_type == "SI",
          p_throws == "L") |>
-  dplyr::select(release_speed, horz, vert) |>
-  scale()
+  dplyr::select(release_speed, horz, vert, release_spin_rate) |>
+  scale() |>
+  as.data.frame()
+
+si_L["Z1"] <- prcomp(si_L)$x[,1]
+si_L["Z2"] <- prcomp(si_L)$x[,2]
 
 sse_si_L <- numeric(length(clust))
 
+set.seed(740)
 for (i in clust) {
-  set.seed(740)
-  k_means <- kmeans(si_L, centers=i, iter.max=200, algorithm="MacQueen")
+  k_means <- kmeans(si_L[,c(1:4)], centers=i, iter.max=200, algorithm="Hartigan-Wong")
   sse_si_L[i] <- k_means$tot.withinss
 }
 
 plot(1:20, sse_si_L, type="b",
+     main = "LHP SI",
      xlab = "Number of Clusters",
      yla = "Within groups sum of squares")
 
 # 5
-
-si_L_clust <- as.data.frame(kmeans(si_L, centers = 5)$centers)
 
 LSI <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
@@ -274,7 +292,7 @@ LSI <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(cluster = kmeans(si_L, centers=5)$cluster,
+  mutate(cluster = kmeans(si_L[,c(1:4)], centers=5, iter.max=200, algorithm="Hartigan-Wong")$cluster,
          pitch_subtype = paste0(pitch_type,cluster))
 
 
@@ -284,24 +302,27 @@ LSI <- pitches |>
 ch_R <- dat |>
   filter(pitch_type == "CH",
          p_throws == "R") |>
-  dplyr::select(release_speed, horz, vert) |>
-  scale()
+  dplyr::select(release_speed, horz, vert, release_spin_rate) |>
+  scale() |>
+  as.data.frame()
+
+ch_R["Z1"] <- prcomp(ch_R)$x[,1]
+ch_R["Z2"] <- prcomp(ch_R)$x[,2]
 
 sse_ch_R <- numeric(length(clust))
 
+set.seed(740)
 for (i in clust) {
-  set.seed(740)
-  k_means <- kmeans(ch_R, centers=i, iter.max=200, algorithm="MacQueen")
+  k_means <- kmeans(ch_R[,c(1:4)], centers=i, iter.max=200, algorithm="Hartigan-Wong")
   sse_ch_R[i] <- k_means$tot.withinss
 }
 
 plot(1:20, sse_ch_R, type="b",
+     main = "RHP CH",
      xlab = "Number of Clusters",
      yla = "Within groups sum of squares")
 
-# 5
-
-ch_R_clust <- as.data.frame(kmeans(ch_R, centers = 5)$centers)
+# 6
 
 RCH <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
@@ -313,7 +334,7 @@ RCH <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(cluster = kmeans(ch_R, centers=5)$cluster,
+  mutate(cluster = kmeans(ch_R[,c(1:4)], centers=6, iter.max=200, algorithm="Hartigan-Wong")$cluster,
          pitch_subtype = paste0(pitch_type,cluster))
 
 
@@ -323,24 +344,27 @@ RCH <- pitches |>
 ch_L <- dat |>
   filter(pitch_type == "CH",
          p_throws == "L") |>
-  dplyr::select(release_speed, horz, vert) |>
-  scale()
+  dplyr::select(release_speed, horz, vert, release_spin_rate) |>
+  scale() |>
+  as.data.frame()
+
+ch_L["Z1"] <- prcomp(ch_L)$x[,1]
+ch_L["Z2"] <- prcomp(ch_L)$x[,2]
 
 sse_ch_L <- numeric(length(clust))
 
+set.seed(740)
 for (i in clust) {
-  set.seed(740)
-  k_means <- kmeans(ch_L, centers=i, iter.max=200, algorithm="MacQueen")
+  k_means <- kmeans(ch_L[,c(1:4)], centers=i, iter.max=200, algorithm="Hartigan-Wong")
   sse_ch_L[i] <- k_means$tot.withinss
 }
 
 plot(1:20, sse_ch_L, type="b",
+     main = "LHP CH",
      xlab = "Number of Clusters",
      yla = "Within groups sum of squares")
 
-# 5
-
-ch_L_clust <- as.data.frame(kmeans(ch_L, centers = 5)$centers)
+# 6
 
 LCH <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
@@ -352,7 +376,7 @@ LCH <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(cluster = kmeans(ch_L, centers=5)$cluster,
+  mutate(cluster = kmeans(ch_L[,c(1:4)], centers=6, iter.max=200, algorithm="Hartigan-Wong")$cluster,
          pitch_subtype = paste0(pitch_type,cluster))
 
 
@@ -362,24 +386,27 @@ LCH <- pitches |>
 cu_R <- dat |>
   filter(pitch_type == "CU",
          p_throws == "R") |>
-  dplyr::select(release_speed, horz, vert) |>
-  scale()
+  dplyr::select(release_speed, horz, vert, release_spin_rate) |>
+  scale() |>
+  as.data.frame()
 
 sse_cu_R <- numeric(length(clust))
 
+cu_R["Z1"] <- prcomp(cu_R)$x[,1]
+cu_R["Z2"] <- prcomp(cu_R)$x[,2]
+
+set.seed(740)
 for (i in clust) {
-  set.seed(740)
-  k_means <- kmeans(cu_R, centers=i, iter.max=200, algorithm="MacQueen")
+  k_means <- kmeans(cu_R[,c(1:4)], centers=i, iter.max=200, algorithm="Hartigan-Wong")
   sse_cu_R[i] <- k_means$tot.withinss
 }
 
 plot(1:20, sse_cu_R, type="b",
+     main = "RHP CU",
      xlab = "Number of Clusters",
      yla = "Within groups sum of squares")
 
-# 4
-
-cu_R_clust <- as.data.frame(kmeans(cu_R, centers = 4)$centers)
+# 6
 
 RCU <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
@@ -391,7 +418,7 @@ RCU <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(cluster = kmeans(cu_R, centers=4)$cluster,
+  mutate(cluster = kmeans(cu_R[,c(1:4)], centers=6, iter.max=200, algorithm="Hartigan-Wong")$cluster,
          pitch_subtype = paste0(pitch_type,cluster))
 
 
@@ -401,24 +428,27 @@ RCU <- pitches |>
 cu_L <- dat |>
   filter(pitch_type == "CU",
          p_throws == "L") |>
-  dplyr::select(release_speed, horz, vert) |>
-  scale()
+  dplyr::select(release_speed, horz, vert, release_spin_rate) |>
+  scale() |>
+  as.data.frame()
+
+cu_L["Z1"] <- prcomp(cu_L)$x[,1]
+cu_L["Z2"] <- prcomp(cu_L)$x[,2]
 
 sse_cu_L <- numeric(length(clust))
 
+set.seed(740)
 for (i in clust) {
-  set.seed(740)
-  k_means <- kmeans(cu_L, centers=i, iter.max=200, algorithm="MacQueen")
+  k_means <- kmeans(cu_L[,c(1:4)], centers=i, iter.max=200, algorithm="Hartigan-Wong")
   sse_cu_L[i] <- k_means$tot.withinss
 }
 
 plot(1:20, sse_cu_L, type="b",
+     main = "LHP CU",
      xlab = "Number of Clusters",
      yla = "Within groups sum of squares")
 
-# 5
-
-cu_L_clust <- as.data.frame(kmeans(cu_L, centers = 5)$centers)
+# 6
 
 LCU <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
@@ -430,7 +460,7 @@ LCU <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(cluster = kmeans(cu_L, centers=5)$cluster,
+  mutate(cluster = kmeans(cu_L[,c(1:4)], centers=6, iter.max=200, algorithm="Hartigan-Wong")$cluster,
          pitch_subtype = paste0(pitch_type,cluster))
 
 
@@ -440,24 +470,27 @@ LCU <- pitches |>
 fc_R <- dat |>
   filter(pitch_type == "FC",
          p_throws == "R") |>
-  dplyr::select(release_speed, horz, vert) |>
-  scale()
+  dplyr::select(release_speed, horz, vert, release_spin_rate) |>
+  scale() |>
+  as.data.frame()
+
+fc_R["Z1"] <- prcomp(fc_R)$x[,1]
+fc_R["Z2"] <- prcomp(fc_R)$x[,2]
 
 sse_fc_R <- numeric(length(clust))
 
+set.seed(740)
 for (i in clust) {
-  set.seed(740)
-  k_means <- kmeans(fc_R, centers=i, iter.max=200, algorithm="MacQueen")
+  k_means <- kmeans(fc_R[,c(1:4)], centers=i, iter.max=200, algorithm="Hartigan-Wong")
   sse_fc_R[i] <- k_means$tot.withinss
 }
 
 plot(1:20, sse_fc_R, type="b",
+     main = "RHP FC",
      xlab = "Number of Clusters",
      yla = "Within groups sum of squares")
 
-# 4
-
-fc_R_clust <- as.data.frame(kmeans(fc_R, centers = 4)$centers)
+# 5
 
 RFC <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
@@ -469,7 +502,7 @@ RFC <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(cluster = kmeans(fc_R, centers=4)$cluster,
+  mutate(cluster = kmeans(fc_R[,c(1:4)], centers=5, iter.max=200, algorithm="Hartigan-Wong")$cluster,
          pitch_subtype = paste0(pitch_type,cluster))
 
 
@@ -479,24 +512,27 @@ RFC <- pitches |>
 fc_L <- dat |>
   filter(pitch_type == "FC",
          p_throws == "L") |>
-  dplyr::select(release_speed, horz, vert) |>
-  scale()
+  dplyr::select(release_speed, horz, vert, release_spin_rate) |>
+  scale() |>
+  as.data.frame()
+
+fc_L["Z1"] <- prcomp(fc_L)$x[,1]
+fc_L["Z2"] <- prcomp(fc_L)$x[,2]
 
 sse_fc_L <- numeric(length(clust))
 
+set.seed(740)
 for (i in clust) {
-  set.seed(740)
-  k_means <- kmeans(fc_L, centers=i, iter.max=200, algorithm="MacQueen")
+  k_means <- kmeans(fc_L[,c(1:4)], centers=i, iter.max=200, algorithm="Hartigan-Wong")
   sse_fc_L[i] <- k_means$tot.withinss
 }
 
 plot(1:20, sse_fc_L, type="b",
+     main = "LHP FC",
      xlab = "Number of Clusters",
      yla = "Within groups sum of squares")
 
-# 4
-
-fc_L_clust <- as.data.frame(kmeans(fc_L, centers = 4)$centers)
+# 5
 
 LFC <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
@@ -508,7 +544,7 @@ LFC <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(cluster = kmeans(fc_L, centers=4)$cluster,
+  mutate(cluster = kmeans(fc_L[,c(1:4)], centers=5, iter.max=200, algorithm="Hartigan-Wong")$cluster,
          pitch_subtype = paste0(pitch_type,cluster))
 
 
@@ -518,24 +554,27 @@ LFC <- pitches |>
 st_R <- dat |>
   filter(pitch_type == "ST",
          p_throws == "R") |>
-  dplyr::select(release_speed, horz, vert) |>
-  scale()
+  dplyr::select(release_speed, horz, vert, release_spin_rate) |>
+  scale() |>
+  as.data.frame()
+
+st_R["Z1"] <- prcomp(st_R)$x[,1]
+st_R["Z2"] <- prcomp(st_R)$x[,2]
 
 sse_st_R <- numeric(length(clust))
 
+set.seed(740)
 for (i in clust) {
-  set.seed(740)
-  k_means <- kmeans(st_R, centers=i, iter.max=200, algorithm="MacQueen")
+  k_means <- kmeans(st_R[,c(1:4)], centers=i, iter.max=200, algorithm="Hartigan-Wong")
   sse_st_R[i] <- k_means$tot.withinss
 }
 
 plot(1:20, sse_st_R, type="b",
+     main = "RHP ST",
      xlab = "Number of Clusters",
      yla = "Within groups sum of squares")
 
 # 5
-
-st_R_clust <- as.data.frame(kmeans(st_R, centers = 5)$centers)
 
 RST <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
@@ -547,7 +586,7 @@ RST <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(cluster = kmeans(st_R, centers=5)$cluster,
+  mutate(cluster = kmeans(st_R[,c(1:4)], centers=5, iter.max=200, algorithm="Hartigan-Wong")$cluster,
          pitch_subtype = paste0(pitch_type,cluster))
 
 
@@ -557,24 +596,27 @@ RST <- pitches |>
 st_L <- dat |>
   filter(pitch_type == "ST",
          p_throws == "L") |>
-  dplyr::select(release_speed, horz, vert) |>
-  scale()
+  dplyr::select(release_speed, horz, vert, release_spin_rate) |>
+  scale() |>
+  as.data.frame()
+
+st_L["Z1"] <- prcomp(st_L)$x[,1]
+st_L["Z2"] <- prcomp(st_L)$x[,2]
 
 sse_st_L <- numeric(length(clust))
 
+set.seed(740)
 for (i in clust) {
-  set.seed(740)
-  k_means <- kmeans(st_L, centers=i, iter.max=200, algorithm="MacQueen")
+  k_means <- kmeans(st_L[,c(1:4)], centers=i, iter.max=200, algorithm="Hartigan-Wong")
   sse_st_L[i] <- k_means$tot.withinss
 }
 
 plot(1:20, sse_st_L, type="b",
+     main = "LHP ST",
      xlab = "Number of Clusters",
      yla = "Within groups sum of squares")
 
 # 4
-
-st_L_clust <- as.data.frame(kmeans(st_L, centers = 4)$centers)
 
 LST <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
@@ -586,7 +628,7 @@ LST <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(cluster = kmeans(st_L, centers=4)$cluster,
+  mutate(cluster = kmeans(st_L[,c(1:4)], centers=4, iter.max=200, algorithm="Hartigan-Wong")$cluster,
          pitch_subtype = paste0(pitch_type,cluster))
 
 
@@ -596,24 +638,27 @@ LST <- pitches |>
 fs_R <- dat |>
   filter(pitch_type == "FS",
          p_throws == "R") |>
-  dplyr::select(release_speed, horz, vert) |>
-  scale()
+  dplyr::select(release_speed, horz, vert, release_spin_rate) |>
+  scale() |>
+  as.data.frame()
+
+fs_R["Z1"] <- prcomp(fs_R)$x[,1]
+fs_R["Z2"] <- prcomp(fs_R)$x[,2]
 
 sse_fs_R <- numeric(length(clust))
 
+set.seed(740)
 for (i in clust) {
-  set.seed(740)
-  k_means <- kmeans(fs_R, centers=i, iter.max=200, algorithm="MacQueen")
+  k_means <- kmeans(fs_R[,c(1:4)], centers=i, iter.max=200, algorithm="Hartigan-Wong")
   sse_fs_R[i] <- k_means$tot.withinss
 }
 
 plot(1:20, sse_fs_R, type="b",
+     main = "RHP FS",
      xlab = "Number of Clusters",
      yla = "Within groups sum of squares")
 
 # 4
-
-fs_R_clust <- as.data.frame(kmeans(fs_R, centers = 4)$centers)
 
 RFS <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
@@ -625,7 +670,7 @@ RFS <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(cluster = kmeans(fs_R, centers=4)$cluster,
+  mutate(cluster = kmeans(fs_R[,c(1:4)], centers=4, iter.max=200, algorithm="Hartigan-Wong")$cluster,
          pitch_subtype = paste0(pitch_type,cluster))
 
 
@@ -635,24 +680,24 @@ RFS <- pitches |>
 fs_L <- dat |>
   filter(pitch_type == "FS",
          p_throws == "L") |>
-  dplyr::select(release_speed, horz, vert) |>
-  scale()
+  dplyr::select(release_speed, horz, vert, release_spin_rate) |>
+  scale() |>
+  as.data.frame()
 
 sse_fs_L <- numeric(length(clust))
 
+set.seed(740)
 for (i in clust) {
-  set.seed(740)
-  k_means <- kmeans(fs_L, centers=i, iter.max=200, algorithm="MacQueen")
+  k_means <- kmeans(fs_L, centers=i, iter.max=200, algorithm="Hartigan-Wong")
   sse_fs_L[i] <- k_means$tot.withinss
 }
 
 plot(1:20, sse_fs_L, type="b",
+     main = "LHP FS",
      xlab = "Number of Clusters",
      yla = "Within groups sum of squares")
 
 # 4, but there is only 58 pitches, so this is not going to be used
-
-# fs_L_clust <- as.data.frame(kmeans(fs_L, centers = _)$centers)
 
 #LFS <- pitches |>
 #  filter(player_name %in% qualified_pitchers$player_name,
@@ -691,24 +736,27 @@ pitches |>
 kc_R <- dat |>
   filter(pitch_type == "KC",
          p_throws == "R") |>
-  dplyr::select(release_speed, horz, vert) |>
-  scale()
+  dplyr::select(release_speed, horz, vert, release_spin_rate) |>
+  scale() |>
+  as.data.frame()
+
+kc_R["Z1"] <- prcomp(kc_R)$x[,1]
+kc_R["Z2"] <- prcomp(kc_R)$x[,2]
 
 sse_kc_R <- numeric(length(clust))
 
+set.seed(740)
 for (i in clust) {
-  set.seed(740)
-  k_means <- kmeans(kc_R, centers=i, iter.max=200, algorithm="MacQueen")
+  k_means <- kmeans(kc_R[,c(1:4)], centers=i, iter.max=200, algorithm="Hartigan-Wong")
   sse_kc_R[i] <- k_means$tot.withinss
 }
 
 plot(1:20, sse_kc_R, type="b",
+     main = "RHP KC",
      xlab = "Number of Clusters",
      yla = "Within groups sum of squares")
 
-# 4
-
-kc_R_clust <- as.data.frame(kmeans(kc_R, centers = 4)$centers)
+# 5
 
 RKC <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
@@ -720,7 +768,7 @@ RKC <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(cluster = kmeans(kc_R, centers=4)$cluster,
+  mutate(cluster = kmeans(kc_R[,c(1:4)], centers=5, iter.max=200, algorithm="Hartigan-Wong")$cluster,
          pitch_subtype = paste0(pitch_type,cluster))
 
 
@@ -730,16 +778,33 @@ RKC <- pitches |>
 kc_L <- dat |>
   filter(pitch_type == "KC",
          p_throws == "L") |>
-  dplyr::select(release_speed, horz, vert) |>
-  scale()
+  dplyr::select(release_speed, horz, vert, release_spin_rate) |>
+  scale() |>
+  as.data.frame()
+
+kc_L["Z1"] <- prcomp(kc_L)$x[,1]
+kc_L["Z2"] <- prcomp(kc_L)$x[,2]
 
 sse_kc_L <- numeric(length(clust))
 
+set.seed(740)
 for (i in clust) {
-  set.seed(740)
-  k_means <- kmeans(kc_L, centers=i, iter.max=200, algorithm="MacQueen")
+  k_means <- kmeans(kc_L[,c(1:4)], centers=i, iter.max=200, algorithm="Hartigan-Wong")
   sse_kc_L[i] <- k_means$tot.withinss
 }
+
+plot(1:20, sse_kc_L, type="b",
+     main = "LHP KC",
+     xlab = "Number of Clusters",
+     yla = "Within groups sum of squares")
+
+pitches |>
+  filter(game_year == 2023,
+         role_key == "SP",
+         p_throws == "L",
+         pitch_type == "KC") |>
+  group_by(player_name) |>
+  summarize(count = n())
 
 par(mar = c(6, 7, 5, 2))
 plot(1:20, sse_kc_L, type="b",
@@ -749,9 +814,7 @@ mtext("Number of Clusters", side = 1, line =4, cex = 3)
 mtext("Within groups sum of squares", side = 2, line = 4, cex = 3)
 title(main = "Elbow Plot for LHP KC", line = 2, cex.main = 4)
 
-# 3
-
-kc_L_clust <- as.data.frame(kmeans(kc_L, centers = 3)$centers)
+# 4
 
 LKC <- pitches |>
   filter(player_name %in% qualified_pitchers$player_name,
@@ -763,7 +826,7 @@ LKC <- pitches |>
          !is.na(pfx_z),
          !is.na(release_spin_rate),
          !is.na(spin_axis)) |>
-  mutate(cluster = kmeans(kc_L, centers=3)$cluster,
+  mutate(cluster = kmeans(kc_L[,c(1:4)], centers=4, iter.max=200, algorithm="Hartigan-Wong")$cluster,
          pitch_subtype = paste0(pitch_type,cluster))
 
 
@@ -852,7 +915,7 @@ LSV <- pitches |>
 
 pitch <- rep(c("4-Seam", "Slider", "Sinker", "Changeup", "Curveball", "Cutter", "Sweeper", "Split-Finger", "Knuckle-Curve"), each=2)
 handed <- rep(c("RHP", "LHP"), 9)
-clusters <- c(5, 6, 5, 5, 5, 5, 5, 5, 4, 5, 4, 4, 5, 4, 4, 0, 4, 3)
+clusters <- c(5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 5, 5, 5, 4, 4, 0, 5, 4)
 
 clust_viz <- data.frame(pitch, handed, clusters)
 
@@ -868,7 +931,7 @@ clust_viz |>
     size = 10
   ) + 
   labs(
-    title = "Pitch Subtypes Identified by K-Means",
+    title = "Pitch Subtypes Identified by K-Means for 2023 SP",
     x = "Primary Pitch Type",
     y = "Number of Clusters",
     fill = "Pitcher"
@@ -877,53 +940,6 @@ clust_viz |>
   theme_minimal() +
   facet_wrap(~handed) +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),text = element_text(size = rel(5)), legend.text = element_text(size = rel(3)),legend.position = "bottom",legend.key.width = unit(0.6,"in"), strip.text = element_text(size = rel(5)), plot.title = element_text(size = rel(9.5), hjust = 0.5), axis.title.x = element_text(margin = margin(t = 25)), axis.title.y = element_text(margin = margin(r = 25, l=10)))
-  
-
-# Cluster center physical characteristics
-
-## 4-seam
-
-RFF_C <- cbind(data.frame("Subtype" = paste0("FF", 1:5)), rep(attr(ff_R, "scaled:scale"), each=5) * ff_R_clust + rep(attr(ff_R, "scaled:center"), each=5))
-LFF_C <- cbind(data.frame("Subtype" = paste0("FF", 1:6)), rep(attr(ff_L, "scaled:scale"), each=6) * ff_L_clust + rep(attr(ff_L, "scaled:center"), each=6))
-
-## Changeup
-
-RCH_C <- cbind(data.frame("Subtype" = paste0("CH", 1:5)), rep(attr(ch_R, "scaled:scale"), each=5) * ch_R_clust + rep(attr(ch_R, "scaled:center"), each=5))
-LCH_C <- cbind(data.frame("Subtype" = paste0("CH", 1:5)), rep(attr(ch_L, "scaled:scale"), each=5) * ch_L_clust + rep(attr(ch_L, "scaled:center"), each=5))
-
-## Curveball
-
-RCU_C <- cbind(data.frame("Subtype" = paste0("CU", 1:4)), rep(attr(cu_R, "scaled:scale"), each=4) * cu_R_clust + rep(attr(cu_R, "scaled:center"), each=4))
-LCU_C <- cbind(data.frame("Subtype" = paste0("CU", 1:5)), rep(attr(cu_L, "scaled:scale"), each=5) * cu_L_clust + rep(attr(cu_L, "scaled:center"), each=5))
-
-## Cutter
-
-RFC_C <- cbind(data.frame("Subtype" = paste0("FC", 1:4)), rep(attr(fc_R, "scaled:scale"), each=4) * fc_R_clust + rep(attr(fc_R, "scaled:center"), each=4))
-LFC_C <- cbind(data.frame("Subtype" = paste0("FC", 1:4)), rep(attr(fc_L, "scaled:scale"), each=4) * fc_L_clust + rep(attr(fc_L, "scaled:center"), each=4))
-
-## Knuckle-Curve
-
-RKC_C <- cbind(data.frame("Subtype" = paste0("KC", 1:4)), rep(attr(kc_R, "scaled:scale"), each=4) * kc_R_clust + rep(attr(kc_R, "scaled:center"), each=4))
-LKC_C <- cbind(data.frame("Subtype" = paste0("KC", 1:3)), rep(attr(kc_L, "scaled:scale"), each=3) * kc_L_clust + rep(attr(kc_L, "scaled:center"), each=3))
-
-## Sinker
-
-RSI_C <- cbind(data.frame("Subtype" = paste0("SI", 1:5)), rep(attr(si_R, "scaled:scale"), each=5) * si_R_clust + rep(attr(si_R, "scaled:center"), each=5))
-LSI_C <- cbind(data.frame("Subtype" = paste0("SI", 1:5)), rep(attr(si_L, "scaled:scale"), each=5) * si_L_clust + rep(attr(si_L, "scaled:center"), each=5))
-
-## Slider
-
-RSL_C <- cbind(data.frame("Subtype" = paste0("SL", 1:5)), rep(attr(sl_R, "scaled:scale"), each=5) * sl_R_clust + rep(attr(sl_R, "scaled:center"), each=5))
-LSL_C <- cbind(data.frame("Subtype" = paste0("SL", 1:5)), rep(attr(sl_L, "scaled:scale"), each=5) * sl_L_clust + rep(attr(sl_L, "scaled:center"), each=5))
-
-## Splitter
-
-RFS_C <- cbind(data.frame("Subtype" = paste0("FS", 1:4)), rep(attr(fs_R, "scaled:scale"), each=4) * fs_R_clust + rep(attr(fs_R, "scaled:center"), each=4))
-
-## Sweeper
-
-RST_C <- cbind(data.frame("Subtype" = paste0("ST", 1:5)), rep(attr(st_R, "scaled:scale"), each=5) * st_R_clust + rep(attr(st_R, "scaled:center"), each=5))
-LKC_C <- cbind(data.frame("Subtype" = paste0("ST", 1:4)), rep(attr(st_L, "scaled:scale"), each=4) * st_L_clust + rep(attr(st_L, "scaled:center"), each=4))
 
 
 
@@ -1043,14 +1059,16 @@ dat6 |>
             count = n()) |>
   filter(count > 500,
          !is.na(prev_type)) |>
-  arrange(mean_out_value)
+  arrange(-mean_out_value)
 
 
 
 #### Start model building for RHP 
 
 RHP <- dat6 |>
-  filter(p_throws == "R")
+  filter(p_throws == "R") |>
+  mutate(prev_type = droplevels(prev_type),
+         pitch_type = droplevels(pitch_type))
 
 # Investigation on the pitches to decide baseline pitch values
 
@@ -1069,7 +1087,7 @@ RHP |>
 
 # Initial model with just primary types
 
-r_mod1 <- lmer(out_value ~  pitch_type + prev_type + pitch_type*prev_type + stand + on_base + count_impact + (1|pitcher) + (1|batter) + (1|home_team) + (1|fielder_2), data=RHP)
+r_mod1 <- lmer(out_value ~  pitch_type + prev_type + pitch_type*prev_type + stand + on_base + count_impact + (1|pitcher) + (1|batter) + (1|home_team), data=RHP)
 
 summary(r_mod1)
 
@@ -1078,7 +1096,7 @@ summary(r_mod1)
 
 pitch_types <- c("FF", "CH", "CU", "FS", "KC", "SI", "SL", "FC", "ST")
 
-r_newdata <- data.frame(crossing(prev_type = pitch_types, pitch_type = pitch_types, stand=c("R", "L"), on_base = F, count_impact = "even", batter = "", pitcher = "", home_team = "", fielder_2 = ""))
+r_newdata <- data.frame(crossing(prev_type = pitch_types, pitch_type = pitch_types, stand=c("R", "L"), on_base = FALSE, count_impact = "even", batter = "", pitcher = "", home_team = ""))
 #This is assuming a 0-0 count with no one on base for the sake of predicted value
 
 res <- predictInterval(merMod = r_mod1, newdata=r_newdata, 
@@ -1129,18 +1147,18 @@ r_pred_mod1 |>
 # Now going to make a higher level to ensure which combinations are successful
 
 res2 <- predictInterval(merMod = r_mod1, newdata=r_newdata, 
-                       level = 0.995, n.sims = 10000, stat = "mean",
+                       level = 0.99, n.sims = 10000, stat = "mean",
                        type = "linear.prediction", which = "fixed",
                        include.resid.var = F)
 
 r_pred2_mod1 <- cbind(r_newdata, res2)
 
 r_pred2_mod1 |>
-  filter(lwr>0 & upr > 0)
+  filter(lwr > 0 | upr < 0)
 
-# Best combination for this is a 4-seam setting up a Cutter
+# Best combinations for this is are a Slider setting up a Cutter and a 4-seam setting up a Cutter
 
-# Building a model with the pitch subtypes to figure out which combination of FF (pre) and FC is the best in terms of out value
+# Building a model with the pitch subtypes to figure out which combination of FF and FC is the best in terms of out value
 
 dat6 |>
   filter(p_throws == "R",
@@ -1149,16 +1167,17 @@ dat6 |>
   group_by(prev_subtype, pitch_subtype) |>
   summarize(mean_out_value = mean(out_value),
              count = n())|>
-  arrange(-count)
+  arrange(mean_out_value) |>
+  view()
 
-# Filter the data down to curveball setting up slider and find the worst performing subtype to make the baseline
+# Filter the data down to ff setting up fc and find the most frequent combo to make the baseline
 
 ff_fc <- dat6 |>
   filter(p_throws == "R",
          prev_type == "FF" & pitch_type == "FC") |>
   mutate(
-    prev_subtype = relevel(prev_subtype, ref = "FF2"),
-    pitch_subtype = relevel(pitch_subtype, ref = "FC1")
+    prev_subtype = relevel(prev_subtype, ref = "FF5"),
+    pitch_subtype = relevel(pitch_subtype, ref = "FC3")
   )
 
 r_mod2 <- lmer(out_value ~ pitch_subtype + prev_subtype + pitch_subtype*prev_subtype + stand + on_base + count_impact + (1|home_team), data=ff_fc)
@@ -1166,9 +1185,9 @@ r_mod2 <- lmer(out_value ~ pitch_subtype + prev_subtype + pitch_subtype*prev_sub
 summary(r_mod2)
 
 ff <- c("FF1", "FF2", "FF3", "FF4", "FF5")
-fc <- c("FC1", "FC2", "FC3", "FC4")
+fc <- c("FC1", "FC2", "FC3", "FC4", "FC5")
 
-ff_fc_r_newdata <- crossing(prev_subtype = ff, pitch_subtype = fc, stand="R", on_base = F, count_impact = "even", batter = "", pitcher = "", home_team = "", fielder_2 = "")
+ff_fc_r_newdata <- crossing(prev_subtype = ff, pitch_subtype = fc, stand="R", on_base = F, count_impact = "even", batter = "", pitcher = "", home_team = "")
 
 
 ff_fc_res <- predictInterval(merMod = r_mod2, newdata = ff_fc_r_newdata, seed = 740,
@@ -1182,23 +1201,23 @@ ff_fc_r_pred_mod2 |>
   mutate(fit_sig = 
            round(ifelse(lwr < 0  & upr > 0, 0, fit), 2)
   ) |>
-  ggplot(aes(x=prev_subtype, y=pitch_subtype, fill = fit_sig)
+  ggplot(aes(x=pitch_subtype, y=prev_subtype, fill = fit_sig)
   ) +
   geom_tile(color="grey90") +
   geom_text(aes(label = fit_sig), color= "black", size = 5) +
-  scale_fill_gradient2(low = "red", high = "darkgreen", limits = c(-0.04, 0.04)) +
+  scale_fill_gradient2(low = "red", high = "darkgreen", limits = c(-0.085, 0.085), breaks = c(-0.08, -0.04, 0, 0.04, 0.08)) +
   theme_minimal() +
   coord_equal() +
   labs(
-    x = "Pitch Type",
-    y = "Previous Pitch Type",
-    fill = "Predicted Out-Value"
+    x = "Pitch Subtype",
+    y = "Previous Pitch Subtype",
+    fill = "Predicted Out-Value    "
   ) +
-  theme(text = element_text(size = rel(5)), legend.text = element_text(size = rel(3)),legend.position = "bottom",legend.key.width = unit(0.4,"in"), , axis.title.x = element_text(margin = margin(t = 25)), axis.title.y = element_text(margin = margin(r = 25, l=10)))
+  theme(text = element_text(size = rel(5)), legend.text = element_text(size = rel(3)),legend.position = "bottom",legend.key.width = unit(0.8,"in"), , axis.title.x = element_text(margin = margin(t = 25)), axis.title.y = element_text(margin = margin(r = 25, l=10)))
 
 dat6 |>
   filter(p_throws == "R",
-    pitch_subtype == "FC3" & prev_subtype == "FF5") |>
+    pitch_subtype == "FC3" & prev_subtype == "FF2") |>
   group_by(player_name) |>
   summarize(count = n()) |>
   arrange(-count)
@@ -1207,11 +1226,120 @@ dat6 |>
   filter(p_throws == "R") |>
   group_by(player_name) |>
   summarize(
-    p_ff5 = round(sum(pitch_subtype == "FF5") / sum(pitch_type == "FF"), 2),
+    p_ff2 = round(sum(pitch_subtype == "FF2") / sum(pitch_type == "FF"), 2),
     p_fc3 = round(sum(pitch_subtype == "FC3") / sum(pitch_type == "FC"), 2)) |>
-  filter(p_ff5 > .25 & p_fc3 > .25)
+  filter(p_ff2 > .33 & p_fc3 > .33)
 
-# Kodai Senga, Dustin May, Grayson Rodriguez, and Yu Darvish (much better than Lance Lynn)
+# Jack Flaherty
+
+dat6 |>
+  filter(p_throws == "R",
+         pitch_subtype == "FC1" & prev_subtype == "FF4") |>
+  group_by(player_name) |>
+  summarize(count = n()) |>
+  arrange(-count)
+
+dat6 |>
+  filter(p_throws == "R") |>
+  group_by(player_name) |>
+  summarize(
+    p_ff4 = round(sum(pitch_subtype == "FF4") / sum(pitch_type == "FF"), 2),
+    p_fc1 = round(sum(pitch_subtype == "FC1") / sum(pitch_type == "FC"), 2)) |>
+  filter(p_ff4 > .33 & p_fc1 > .33)
+
+# Now slider setting up a cutter
+
+dat6 |>
+  filter(p_throws == "R",
+         prev_type == "SL",
+         pitch_type == "FC") |>
+  group_by(prev_subtype, pitch_subtype) |>
+  summarize(mean_out_value = mean(out_value),
+            count = n())|>
+  arrange(mean_out_value)
+
+# Filter the data down to ff setting up fc and find the most frequent combo to make the baseline
+
+ff_fc <- dat6 |>
+  filter(p_throws == "R",
+         prev_type == "SL" & pitch_type == "FC") |>
+  mutate(
+    prev_subtype = relevel(prev_subtype, ref = "SL3"),
+    pitch_subtype = relevel(pitch_subtype, ref = "FC4")
+  )
+
+r_mod3 <- lmer(out_value ~ pitch_subtype + prev_subtype + pitch_subtype*prev_subtype + stand + on_base + count_impact + (1|home_team), data=ff_fc)
+
+summary(r_mod2)
+
+sl <- c("SL1", "SL2", "SL3", "SL4", "SL5")
+fc <- c("FC1", "FC2", "FC3", "FC4", "FC5")
+
+sl_fc_r_newdata <- crossing(prev_subtype = sl, pitch_subtype = fc, stand="R", on_base = F, count_impact = "even", batter = "", pitcher = "", home_team = "")
+
+
+sl_fc_res <- predictInterval(merMod = r_mod2, newdata = ff_fc_r_newdata, seed = 740,
+                             level = 0.8, n.sims = 10000, stat = "mean",
+                             type = "linear.prediction", which = "fixed",
+                             include.resid.var = F)
+
+sl_fc_r_pred_mod3 <- cbind(ff_fc_r_newdata, ff_fc_res)
+
+sl_fc_r_pred_mod3 |>
+  mutate(fit_sig = 
+           round(ifelse(lwr < 0  & upr > 0, 0, fit), 2)
+  ) |>
+  ggplot(aes(x=pitch_subtype, y=prev_subtype, fill = fit_sig)
+  ) +
+  geom_tile(color="grey90") +
+  geom_text(aes(label = fit_sig), color= "black", size = 5) +
+  scale_fill_gradient2(low = "red", high = "darkgreen", limits = c(-0.75, 0.75), breaks = c(-0.7, -0.35, 0, 0.35, 0.7)) +
+  theme_minimal() +
+  coord_equal() +
+  labs(
+    x = "Pitch Subtype",
+    y = "Previous Pitch Subtype",
+    fill = "Predicted Out-Value    "
+  ) +
+  theme(text = element_text(size = rel(5)), legend.text = element_text(size = rel(3)),legend.position = "bottom",legend.key.width = unit(0.8,"in"), , axis.title.x = element_text(margin = margin(t = 25)), axis.title.y = element_text(margin = margin(r = 25, l=10)))
+
+dat6 |>
+  filter(p_throws == "R",
+         pitch_subtype == "FC4" & prev_subtype == "SL4") |>
+  group_by(player_name) |>
+  summarize(count = n()) |>
+  arrange(-count)
+
+dat6 |>
+  filter(p_throws == "R") |>
+  group_by(player_name) |>
+  summarize(
+    p_sl4 = round(sum(pitch_subtype == "SL4") / sum(pitch_type == "SL"), 2),
+    p_fc4 = round(sum(pitch_subtype == "FC4") / sum(pitch_type == "FC"), 2)) |>
+  filter(p_sl4 > .33 & p_fc4 > .33)
+
+# Mason Miller
+
+dat6 |>
+  filter(p_throws == "R",
+         pitch_subtype == "FC4" & prev_subtype == "SL3") |>
+  group_by(player_name) |>
+  summarize(count = n()) |>
+  arrange(-count)
+
+dat6 |>
+  filter(p_throws == "R") |>
+  group_by(player_name) |>
+  summarize(
+    p_sl3 = round(sum(pitch_subtype == "SL3") / sum(pitch_type == "SL"), 2),
+    p_fc4 = round(sum(pitch_subtype == "FC4") / sum(pitch_type == "FC"), 2)) |>
+  filter(p_sl3 > .33 & p_fc4 > .33)
+
+
+
+
+
+
 
 
 
@@ -1222,15 +1350,15 @@ LHP <- dat6 |>
   mutate(prev_type = droplevels(prev_type),
          pitch_type = droplevels(pitch_type))
 
-l_mod1 <- lmer(out_value ~  pitch_type + prev_type + pitch_type*prev_type + stand + on_base + count_impact + (1|pitcher) + (1|batter) + (1|home_team) + (1|fielder_2), data=LHP)
+l_mod1 <- lmer(out_value ~  pitch_type + prev_type + pitch_type*prev_type + stand + on_base + count_impact + (1|pitcher) + (1|batter) + (1|home_team), data=LHP)
 
 summary(l_mod1)
 
 pitch_types <- c("FF", "CH", "CU", "KC", "SI", "SL", "FC", "ST")
 
-l_newdata <- data.frame(crossing(prev_type = pitch_types, pitch_type = pitch_types, stand=c("R", "L"), on_base = F, count_impact = "even", batter = "", pitcher = "", home_team = "", fielder_2 = ""))
+l_newdata <- data.frame(crossing(prev_type = pitch_types, pitch_type = pitch_types, stand=c("R", "L"), on_base = F, count_impact = "even", batter = "", pitcher = "", home_team = ""))
 
-res <- predictInterval(merMod = l_mod1, newdata=l_newdata, 
+res <- predictInterval(merMod = l_mod1, newdata=l_newdata, seed=740,
                        level = 0.8, n.sims = 10000, stat = "mean",
                        type = "linear.prediction", which = "fixed",
                        include.resid.var = F)
@@ -1277,14 +1405,14 @@ l_pred_mod1 |>
 
 
 res2 <- predictInterval(merMod = l_mod1, newdata=l_newdata, seed = 740,
-                        level = 0.995, n.sims = 10000, stat = "mean",
+                        level = 0.99, n.sims = 10000, stat = "mean",
                         type = "linear.prediction", which = "fixed",
                         include.resid.var = F)
 
 l_pred2_mod1 <- cbind(l_newdata, res2)
 
 l_pred2_mod1 |>
-  filter(lwr>0 & upr > 0)
+  filter(lwr > 0 | upr < 0)
 
 
 dat6 |>
@@ -1294,16 +1422,17 @@ dat6 |>
   group_by(prev_subtype, pitch_subtype) |>
   summarize(mean_out_value = mean(out_value),
             count = n())|>
-  arrange(-count)
+  arrange(mean_out_value) |>
+  view()
 
-# Filter the data down to curveball setting up slider and find the worst performing subtype to make the baseline
+# Filter the data down to slider setting up slider and find the worst performing subtype to make the baseline
 
 sl_sl <- dat6 |>
   filter(p_throws == "L",
          prev_type == "SL" & pitch_type == "SL") |>
   mutate(
-    prev_subtype = relevel(prev_subtype, ref = "SL1"),
-    pitch_subtype = relevel(pitch_subtype, ref = "SL1")
+    prev_subtype = relevel(prev_subtype, ref = "SL3"),
+    pitch_subtype = relevel(pitch_subtype, ref = "SL2")
   )
 
 l_mod2 <- lmer(out_value ~ pitch_subtype + prev_subtype + pitch_subtype*prev_subtype + stand + on_base + count_impact + (1|home_team), data=sl_sl)
@@ -1312,7 +1441,7 @@ summary(l_mod2)
 
 sl <- c("SL1", "SL2", "SL3", "SL4", "SL5")
 
-sl_sl_l_newdata <- crossing(prev_subtype = sl, pitch_subtype = sl, stand=c("R","L"), on_base = F, count_impact = "even", batter = "", pitcher = "", home_team = "", fielder_2 = "")
+sl_sl_l_newdata <- crossing(prev_subtype = sl, pitch_subtype = sl, stand=c("R","L"), on_base = F, count_impact = "even", batter = "", pitcher = "", home_team = "")
 
 
 sl_sl_res <- predictInterval(merMod = l_mod2, newdata = sl_sl_l_newdata, seed = 740,
@@ -1325,9 +1454,11 @@ sl_sl_l_pred_mod2 <- cbind(sl_sl_l_newdata, sl_sl_res)
 sl_sl_l_pred_mod2 |>
   mutate(fit_sig = 
            round(ifelse(lwr < 0  & upr > 0, 0, fit), 2),
+         fit_sig = 
+           round(ifelse(prev_subtype == "SL1" & pitch_subtype == "SL3", 0, fit_sig), 2),
          batter = paste0(stand,"HB")
   ) |>
-  ggplot(aes(x=prev_subtype, y=pitch_subtype, fill = fit_sig)
+  ggplot(aes(x=pitch_subtype, y=prev_subtype, fill = fit_sig)
   ) +
   geom_tile(color="grey90") +
   geom_text(aes(label = fit_sig), color= "black", size = 5) +
@@ -1341,12 +1472,12 @@ sl_sl_l_pred_mod2 |>
     fill = "Predicted Out-Value   "   
   ) +
   facet_wrap(~batter) +
-  theme(text = element_text(size = rel(5)), legend.text = element_text(size = rel(3)),legend.position = "bottom",legend.key.width = unit(0.6,"in"), strip.text = element_text(size = rel(5)), plot.title = element_text(size = rel(9.5), hjust = 0.5), , axis.title.x = element_text(margin = margin(t = 25)), axis.title.y = element_text(margin = margin(r = 25, l=10)))
+  theme(text = element_text(size = rel(5)), legend.text = element_text(size = rel(3)),legend.position = "bottom",legend.key.width = unit(0.8,"in"), strip.text = element_text(size = rel(5)), plot.title = element_text(size = rel(9.5), hjust = 0.5), , axis.title.x = element_text(margin = margin(t = 25)), axis.title.y = element_text(margin = margin(r = 25, l=10)))
   
 
 dat6 |>
   filter(p_throws == "L",
-         pitch_subtype == "SL4" & prev_subtype == "SL1") |>
+         pitch_subtype == "SL5" & prev_subtype == "SL3") |>
   group_by(player_name) |>
   summarize(count = n()) |>
   arrange(-count)
@@ -1355,11 +1486,11 @@ dat6 |>
   filter(p_throws == "L") |>
   group_by(player_name) |>
   summarize(
-    p_sl1 = round(sum(pitch_subtype == "SL1") / sum(pitch_type == "SL"), 2),
-    p_sl4 = round(sum(pitch_subtype == "SL4") / sum(pitch_type == "SL"), 2)) |>
-  filter(p_sl1 > 0.25 & p_sl4 > 0.25)
+    p_sl3 = round(sum(pitch_subtype == "SL3") / sum(pitch_type == "SL"), 2),
+    p_sl5 = round(sum(pitch_subtype == "SL5") / sum(pitch_type == "SL"), 2)) |>
+  filter(p_sl3 > 0.2 & p_sl5 > 0.2)
 
-# Clayton Kershaw, Yusei Kikuchi, Patrick Sandoval, Jose Suarez
+# Tyler Anderson
 
 dat6 |>
   filter(p_throws == "L",
@@ -1374,13 +1505,13 @@ dat6 |>
   summarize(
     p_sl1 = round(sum(pitch_subtype == "SL2") / sum(pitch_type == "SL"), 2),
     p_sl4 = round(sum(pitch_subtype == "SL4") / sum(pitch_type == "SL"), 2)) |>
-  filter(p_sl1 > 0.25 & p_sl4 > 0.25)
+  filter(p_sl1 > 0.2 & p_sl4 > 0.2)
 
-# Ranger Suarez
+# Jesus Luzardo
 
 dat6 |>
   filter(p_throws == "L",
-         pitch_subtype == "SL3" & prev_subtype == "SL5") |>
+         pitch_subtype == "SL4" & prev_subtype == "SL1") |>
   group_by(player_name) |>
   summarize(count = n()) |>
   arrange(-count)
@@ -1389,11 +1520,11 @@ dat6 |>
   filter(p_throws == "L") |>
   group_by(player_name) |>
   summarize(
-    p_sl5 = round(sum(pitch_subtype == "SL5") / sum(pitch_type == "SL"), 2),
-    p_sl3 = round(sum(pitch_subtype == "SL3") / sum(pitch_type == "SL"), 2)) |>
-  filter(p_sl5 > 0.25 & p_sl3 > 0.25)
+    p_sl4 = round(sum(pitch_subtype == "SL4") / sum(pitch_type == "SL"), 2),
+    p_sl1 = round(sum(pitch_subtype == "SL1") / sum(pitch_type == "SL"), 2)) |>
+  filter(p_sl4 > 0.2 & p_sl1 > 0.2)
 
-# Andrew Heaney
+# Reid Detmers
 
 
 
@@ -1406,26 +1537,45 @@ dat_clusts_r <- dat6 |>
   summarize(
     release_speed = mean(release_speed),
     vert = mean(pfx_z) * 12,
-    horz = mean(pfx_x) * 12
+    horz = mean(pfx_x) * 12,
+    spin = mean(release_spin_rate),
+    count = n()
   ) |>
   ungroup() |>
-  mutate(pitch_type = substr(pitch_subtype,1,2)) 
+  mutate(pitch_type = substr(pitch_subtype,1,2))
 
 dat_clusts_r |>
-  mutate(point_size = scales::rescale(release_speed, to = c(6,20), from = range(dat_clusts_r$release_speed))) |> 
-  ggplot(aes(x = horz, y = vert, color = release_speed, size = point_size)) +
-  geom_point(alpha = 0.8) +
+  ggplot(aes(x = horz, y = vert, color = release_speed, size = count)) +
+  geom_jitter(alpha = 0.8, width = 0.75, height = 0.75) +
   facet_wrap(~pitch_type) +
   scale_color_gradient2(low = "gray", mid = "yellow", high = "red", midpoint = 82, limits = c(67,97), breaks=c(70,75,80,85,90,95)) +
-  scale_size_identity() +
   scale_x_continuous(breaks = seq(-20, 20, by = 10), limits = c(-25, 25)) +
   scale_y_continuous(breaks = seq(-20, 20, by = 10), limits = c(-25, 25)) +
+  scale_size_continuous(range = c(5, 20)) +
   theme_bw() +
   labs(title = "Physical Characteristics of RHP Pitch Subtypes",
        x = "Horitzonal Break",
        y = "Vertical Break",
-       color = "Release Speed    ") +
+       color = "Release Speed    ",
+       size = "n") +
   theme(text = element_text(size = rel(5)), legend.text = element_text(size = rel(3)),legend.position = "bottom",legend.key.width = unit(1,"in"), strip.text = element_text(size = rel(5)), plot.title = element_text(size = rel(9.5), hjust = 0.5), axis.title.x = element_text(margin = margin(t = 25)), axis.title.y = element_text(margin = margin(r = 25, l=10)))
+
+dat_clusts_r |>
+  ggplot(aes(x = horz, y = vert, color = spin, size = count)) +
+  geom_jitter(alpha = 0.8, width = 0.75, height = 0.75) +
+  facet_wrap(~pitch_type) +
+  scale_color_gradient2(low = "gray", mid = "lightgreen", high = "blue", midpoint = 2000, limits = c(980,3020), breaks=c(1000,2000,3000)) +
+  scale_x_continuous(breaks = seq(-20, 20, by = 10), limits = c(-25, 25)) +
+  scale_y_continuous(breaks = seq(-20, 20, by = 10), limits = c(-25, 25)) +
+  scale_size_continuous(range = c(5, 20)) +
+  theme_bw() +
+  labs(title = "Physical Characteristics of RHP Pitch Subtypes",
+       x = "Horitzonal Break",
+       y = "Vertical Break",
+       color = "Spin Rate    ") +
+  theme(text = element_text(size = rel(5)), legend.text = element_text(size = rel(3)),legend.position = "bottom",legend.key.width = unit(1,"in"), strip.text = element_text(size = rel(5)), plot.title = element_text(size = rel(9.5), hjust = 0.5), axis.title.x = element_text(margin = margin(t = 25)), axis.title.y = element_text(margin = margin(r = 25, l=10)))
+
+
   
 dat_clusts_r |>
   filter(pitch_type == "FF") |>
@@ -1457,31 +1607,35 @@ dat_clusts_l <- dat6 |>
   summarize(
     release_speed = mean(release_speed),
     vert = mean(pfx_z) * 12,
-    horz = mean(pfx_x) * 12
+    horz = mean(pfx_x) * 12,
+    spin = mean(release_spin_rate),
+    count = n()
   ) |>
   ungroup() |>
-  mutate(pitch_type = substr(pitch_subtype,1,2),
-         point_size = scales::rescale(release_speed, to = c(6,20), from = range(dat_clusts_l$release_speed)))
+  mutate(pitch_type = substr(pitch_subtype,1,2))
 
-dummy <- data.frame(pitch_subtype = "FS1", release_speed = 0, vert = 0, horz = 0, pitch_type = "FS", point_size = 0)
+dummy <- data.frame(pitch_subtype = "FS1", release_speed = 0, vert = 0, horz = 0, spin = 1500, pitch_type = "FS", count = 0)
 
 dat_clusts_l1 <- rbind(dat_clusts_l, dummy)
 
 dat_clusts_l1 |>
-  ggplot(aes(x = horz, y = vert, color = release_speed, size = point_size)) +
-  geom_point(alpha = 0.8) +
+  ggplot(aes(x = horz, y = vert, color = release_speed)) +
+  geom_point(alpha = 0.8, size = 12, position = position_jitter(width = 0.5, height = 0.5)) +
   facet_wrap(~factor(pitch_type,levels = c("CH", "CU", "FC", 
                                            "FF", "FS", "KC", 
                                            "SI", "SL", "ST"))) +
-  scale_color_gradient2(low = "gray", mid = "yellow", high = "red", midpoint = 82, limits = c(67,97), breaks=c(70,75,80,85,90,95)) +
-  scale_size_identity() +
+  scale_color_gradient2(low = "gray", mid = "yellow", high = "red", midpoint = 82.5, limits = c(68,97), breaks=c(70,75,80,85,90,95)) +
   scale_x_continuous(breaks = seq(-20, 20, by = 10), limits = c(-25, 25)) +
   scale_y_continuous(breaks = seq(-20, 20, by = 10), limits = c(-25, 25)) +
-  theme_bw() + labs(title = "Physical Characteristics of LHP Pitch Subtypes",
+  #scale_size_continuous(range = c(5, 25), breaks = c(1000,1500,2000)) +
+  theme_bw() + 
+  labs(title = "Physical Characteristics of LHP Pitch Subtypes",
                     x = "Horitzonal Break",
                     y = "Vertical Break",
                     color = "Release Speed    ") +
-  theme(text = element_text(size = rel(5)), legend.text = element_text(size = rel(3)),legend.position = "bottom",legend.key.width = unit(1,"in"), strip.text = element_text(size = rel(5)), plot.title = element_text(size = rel(9.5), hjust = 0.5), axis.title.x = element_text(margin = margin(t = 25)), axis.title.y = element_text(margin = margin(r = 25, l=10)))
+  theme(plot.background = element_rect(fill = "lightgray"),legend.background = element_rect(fill = "lightgray"),text = element_text(size = rel(5)), legend.text = element_text(size = rel(3)),legend.position = "bottom",legend.key.width = unit(1,"in"), strip.text = element_text(size = rel(5)), plot.title = element_text(size = rel(9.5), hjust = 0.5), axis.title.x = element_text(margin = margin(t = 25)), axis.title.y = element_text(margin = margin(r = 25, l=10)))
+
+
 
 
 dat_clusts_l |>
@@ -1494,3 +1648,50 @@ dat_clusts_l |>
     "Horizontal Break" = horz
   ) |>
   kable()
+
+eda1 <- dat |>
+  group_by(pitch_type, p_throws) |>
+  summarize(
+    count = n(),
+    velo = mean(release_speed),
+    spin = mean(release_spin_rate),
+    horz = mean(pfx_x) * 12,
+    vert = mean(pfx_z) * 12
+  ) |>
+  ungroup()
+
+eda1|>
+  filter(p_throws == "R",
+         count > 1000) |>
+  dplyr::select(1,4,5,6,7,3) |>
+  rename(
+    "Pitch Type" = 1,
+    "Velocity" = 2,
+    "Spin Rate" = 3,
+    "Horizontal Movement" = 4,
+    "Vertical Movement" = 5,
+    "Pitches Thrown" = 6
+  ) |>
+  gt() |>
+  fmt_number(
+    column = 2:5,
+    decimals = 2
+  )
+
+eda1|>
+  filter(p_throws == "L",
+         count > 50) |>
+  dplyr::select(1,4,5,6,7,3) |>
+  rename(
+    "Pitch Type" = 1,
+    "Velocity" = 2,
+    "Spin Rate" = 3,
+    "Horizontal Movement" = 4,
+    "Vertical Movement" = 5,
+    "Pitches Thrown" = 6
+  ) |>
+  gt() |>
+  fmt_number(
+    column = 2:5,
+    decimals = 2
+  )
