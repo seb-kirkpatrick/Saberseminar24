@@ -940,16 +940,18 @@ dat_clusts_r |>
   ggplot(aes(
     x = horz,
     y = vert,
-    label= pitch_subtype
+    color = case_when(
+      pitch_subtype == "FF1" ~ "yellow",
+      pitch_subtype == "FC1" ~ "green",
+      .default = "#800020")
   )) +
-  geom_point(size = 7,
-             alpha = 0.5,
-             color = "#800020") +
+  geom_point(size = 8,
+             alpha = 0.5) +
   facet_wrap( ~ pitch_type) +
   labs(
     title = "Movement Characteristics of RHP Pitch Subtypes",
     x = "Horitzonal Break",
-    y = "Vertical Break"
+    y = "Vertical Break",
   ) +
   theme( 
     text = element_text(size = rel(5)),
@@ -957,17 +959,20 @@ dat_clusts_r |>
     plot.title = element_text(size = rel(9.5), hjust = 0.5),
     axis.title.x = element_text(margin = margin(t = 25)),
     axis.title.y = element_text(margin = margin(r = 25, l = 10))
-  )
+  ) +
+  guides(color = "none")
 
 dat_clusts_r |>
   ggplot(aes(
     x = spin,
     y = release_speed,
-    label= pitch_subtype
+    color = case_when(
+      pitch_subtype == "FF1" ~ "yellow",
+      pitch_subtype == "FC1" ~ "green",
+      .default = "#800020")
   )) +
-  geom_point(size = 7,
-             alpha = 0.5,
-             color = "#800020") +
+  geom_point(size = 8,
+             alpha = 0.5) +
   facet_wrap( ~ pitch_type) +
   labs(
     title = "Pitch Dynamics of RHP Pitch Subtypes",
@@ -980,7 +985,8 @@ dat_clusts_r |>
     plot.title = element_text(size = rel(9.5), hjust = 0.5),
     axis.title.x = element_text(margin = margin(t = 25)),
     axis.title.y = element_text(margin = margin(r = 25, l = 10))
-  )
+  ) +
+  guides(color = "none")
 
 dat_clusts_l <- dat6 |>
   filter(p_throws == "L") |>
@@ -1000,11 +1006,13 @@ dat_clusts_l |>
   ggplot(aes(
     x = horz,
     y = vert,
-    label= pitch_subtype
+    color = case_when(
+      pitch_subtype == "SL4" ~ "yellow",
+      pitch_subtype == "SL5" ~ "green",
+      .default = "#800020")
   )) +
   geom_point(size = 7,
-             alpha = 0.5,
-             color = "#800020") +
+             alpha = 0.5) +
   facet_wrap( ~ pitch_type) +
   labs(
     title = "Movement Characteristics of LHP Pitch Subtypes",
@@ -1017,17 +1025,20 @@ dat_clusts_l |>
     plot.title = element_text(size = rel(9.5), hjust = 0.5),
     axis.title.x = element_text(margin = margin(t = 25)),
     axis.title.y = element_text(margin = margin(r = 25, l = 10))
-  )
+  ) +
+  guides(color = "none")
 
 dat_clusts_l |>
   ggplot(aes(
     x = spin,
     y = release_speed,
-    label= pitch_subtype
+    color = case_when(
+      pitch_subtype == "SL4" ~ "yellow",
+      pitch_subtype == "SL5" ~ "green",
+      .default = "#800020")
   )) +
   geom_point(size = 7,
-             alpha = 0.5,
-             color = "#800020") +
+             alpha = 0.5) +
   facet_wrap( ~ pitch_type) +
   labs(
     title = "Pitch Dynamics of LHP Pitch Subtypes",
@@ -1040,4 +1051,5 @@ dat_clusts_l |>
     plot.title = element_text(size = rel(9.5), hjust = 0.5),
     axis.title.x = element_text(margin = margin(t = 25)),
     axis.title.y = element_text(margin = margin(r = 25, l = 10))
-  )
+  ) +
+  guides(color = "none")
